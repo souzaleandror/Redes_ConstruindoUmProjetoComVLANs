@@ -836,3 +836,766 @@ Nessa aula, você aprendeu:
 O que são lans virtuais e as principais vantagens de seu uso em um projeto de redes;
 Como criar uma vlan e configurar o seu funcionamento usando dispositivos de rede como switches e roteadores;
 Como conectar e operar vlans diferentes criadas para segmentação de uma rede em setores conforme demandas definidas nos requisitos do projeto.
+
+#### 07/08/2023
+
+@01-Configurando subredes de modo eficiente
+
+@@01
+Redundância de links com STP
+
+Ficamos com uma pergunta: o que aconteceria, por exemplo, se alguém tropeçasse acidentalmente em um desses links de conexão entre um switch e outro, ou entre um switch e um roteador?
+Simplesmente ficaríamos sem rede, perderíamos todo o acesso de um determinado setor ou laboratório à internet ou a outros setores da empresa. Uma forma de resolvermos esse tipo de situação é inserir redundância na rede.
+
+Redundância de links com STP
+Para fazer isso, poderíamos adicionar um terceiro switch C, fazer a conexão desse switch C com o roteador, e realizar uma conexão entre os três switches da nossa rede.
+
+Vamos testar isso?
+
+No exemplo que estamos construindo, vamos selecionar um switch semelhante aos demais que selecionamos, o modelo 2950-24. Faremos a desconexão entre o roteador e o Switch_A, e em seguida criaremos uma nova do tipo "Copper Cross-Over" entre o Switch_A e esse novo switch, usando a porta FastEthernet0/4 no primeiro e FastEthernet0/2 no segundo.
+
+Depois, faremos uma conexão do Switch_B com o novo switch usando as portas FastEthernet0/4 e FastEthernet0/4 respectivamente.
+
+Por fim, faremos uma conexão do mesmo tipo entre o novo switch, partindo da porta FastEthernet0/1 com a porta FastEthernet0/0 do roteador.
+
+Além disso, vamos renomear o novo switch para Switch_C.
+
+Agora precisamos repetir todo o processo de configuração do switch, de tal forma que nossas VLANs estejam configuradas corretamente. Vamos começar com o comando enable em uma primeira linha, seguido de configure terminal na próxima.
+
+enable
+COPIAR CÓDIGO
+configure terminal
+COPIAR CÓDIGO
+Em seguida, usamos o comando vlan 10, e na sequência, o name pesquisa. Uma vez configurado, digitamos o comando exit, seguido de vlan 20 na próxima linha. Depois configuramos com name administrativo, e finalizamos com o comando exit.
+
+vlan 10
+COPIAR CÓDIGO
+name pesquisa
+COPIAR CÓDIGO
+exit
+COPIAR CÓDIGO
+vlan 20
+COPIAR CÓDIGO
+name administrativo
+COPIAR CÓDIGO
+exit
+COPIAR CÓDIGO
+Já sabemos que não precisamos configurar as portas trunk porque, nos equipamentos da Cisco, temos o protocolo DTP (Dynamic Trunking Protocol - Protocolo de Troncalização Dinâmica).
+
+Vamos fazer um teste para conferir se tudo na nossa rede funciona corretamente e se não quebramos nenhuma configuração: faremos um ping do Pesquisador_A para o Pesquisador-B. Usaremos o endereço de IP de Pesquisador-B, que é 192.168.10.3.
+
+ping 192.168.10.3
+COPIAR CÓDIGO
+Tudo deverá funcionar corretamente. Também podemos fazer um ping para o computador da coordenação, que é 192.168.20.3.
+
+ping 192.168.20.3
+COPIAR CÓDIGO
+Funciona corretamente da mesma forma. Porém, há um detalhe: a conexão que parte da porta do Switch_A está laranja. Será que isso representa algum tipo de problema na nossa rede ou está tudo funcionando normalmente? Não há nada de errado com essa marcação. Na verdade, acabamos de criar uma malha na nossa rede.
+
+O que aconteceria se um ping vindo de uma rede externa chegasse nessa malha? Geralmente, o ping tem um TTL (Time To Leave - Tempo Para Sair). O TTL contabiliza por quantos dispositivos de rede o pacote passou. Porém, o único dispositivo de rede que tem a capacidade de decrementar o TTL são os roteadores.
+
+Os switches não possuem essa habilidade de decrementar uma mensagem. Dessa forma, se uma mensagem chega no switch, ela circulará causando congestionamento.
+
+Para solucionar esse tipo de problema, temos um protocolo específico que é o STP (Spanning Tree Protocol). É esse o protocolo que está atuando na nossa malha e desativando a porta Switch_A, para impedir a formação do ciclo onde uma mensagem ficaria eternamente circulando entre os dispositivos de rede.
+
+Mas como funciona o protocolo STP?
+
+Ele funciona elegendo um switch da malha que vai atuar como principal, e para fazer essa seleção do principal (ou switch root), é necessário ter uma troca de mensagens entre os switches da rede. No contexto de uma rede, sempre que falamos em troca de mensagens, temos um protocolo rodando por trás. Nesse caso, o protocolo BPDU (Bridge Protocol Data Unit).
+
+Para ilustrar o conceito do protocolo BPDU, preparamos o esquema abaixo:
+
+Esquema STP triangular formado por três switches: Switch ADM no topo, Switch MKT na ponta esquerda, e Switch RH na ponta direita. Ao lado dos switches, estão os endereços "MAC 22.22.22.22.22.22", "MAC 33.33.33.33.33.33", e "MAC 11.11.11.11.11.11". Em cada linha de conexão há a inscrição "1 Gps". À direita do esquema, há um retângulo intitulado "BDPU - Bridge Protocol Data Unit", contendo dois retângulos menores dispostos lado a lado, intitulados "Prioridade 32.768" e "Endereço MAC", da esquerda para a direita.
+
+Esse protocolo é acionado quando formamos uma ponte na rede. Essa mensagem tem dois campos, um campo de prioridade e um campo de endereço MAC.
+
+Endereço MAC é o endereço físico que todos os dispositivos que têm uma placa de rede possuem, atribuído por padrão pelo respectivo fabricante.
+
+Nesse protocolo, os dispositivos vão trocar mensagem e a seleção do root será baseada em quem tiver a menor prioridade. No STP, a lógica é "quanto menor, melhor". O switch que tiver a menor prioridade será eleito como root ou switch principal.
+
+Perceba que, no esquema, colocamos o valor de 32.768 na prioridade, e isso não é por acaso. Esse é o valor padrão que vem no switch como prioridade. Se ninguém o alterou, essa é a prioridade padrão, e se todos têm a mesma prioridade, a seleção do switch root será feita por meio da observação do endereço MAC. Como todos os dispositivos possuem endereço MAC diferente, o switch eleito como root será aquele que tiver o menor endereço MAC.
+
+No nosso caso, se observarmos que os switches de ADM, do RH e do MKT têm a mesma prioridade padrão, o switch root, hipoteticamente, seria o Switch RH com o endereço MAC 11.11.11.11.
+
+Mas, nesse caso, ele não é o switch principal, porque temos uma porta desabilitada e esse é um detalhe importante do switch root: ele tem o privilégio de ser o switch principal da rede, ou seja, ele tem a conexão e acaba concentrando todo o tráfego que chega para determinada rede.
+
+Todas as portas do switch root são designadas, portas pelas quais temos um tráfego de dados de entrada e de saída, tanto da rede quanto desse switch para outros switches que estão interligados com ele.
+
+Se temos um switch que tem as portas designadas e com todas as suas portas no modo ativo, como será a determinação da porta que vai ficar inativa?
+
+Os demais switches vão fazer um cálculo, ou seja, vão analisar qual porta vão utilizar para fazer a conexão com o switch root. Como eles fazem isso? Analisando a velocidade de cada link. Eles têm uma tabela de conversão entre a velocidade de conexão e o custo dessa conexão.
+
+Em geral, quanto maior a velocidade de conexão, menor o custo, e segundo o STP, a lógica é "quanto menor, melhor". Se for menor o custo, a porta será eleita como a porta de acesso ao switch root.
+
+No esquema exibido acima, colocamos o valor como 1 Gps, que é uma velocidade de conexão. Então, verificaríamos essa conversão na tabela de custo e seria eleita a porta de acesso ao root, que se chama porta root.
+
+Por fim, a porta que tiver o maior custo, como, por exemplo, a Switch RH, acaba sendo desativada. Porém, se alguém, por exemplo, tropeçar no link entre Switch ADM e Switch RH, automaticamente o STP vai acionar a porta esquerda do Switch RH, que está inativa por enquanto e marcada em laranja no esquema.
+
+Isso irá manter a conectividade e a interligação entre esses dispositivos de rede, que têm outros PCs e outros computadores interligados.
+
+Com isso, nós não perdemos a conexão se um dos links cair.
+
+Agora, se voltarmos ao nosso projeto da rede do Instituto Inovae, agora que já entendemos bem como funciona o STP, como verificar quem é o root da rede?
+
+Podemos clicar, por exemplo, no Switch_B e acessar a aba do CLI. Vamos usar o comando show spanning-tree vlan 10 após habilitarmos o CLI com o comando enable.
+
+enable
+COPIAR CÓDIGO
+show spanning-tree vlan 10
+COPIAR CÓDIGO
+Com esse comando, teremos toda uma análise, um relatório de quais portas são portas designadas, e podemos identificar primeiro a prioridade desse switch.
+
+VLAN 0010
+  Spanning tree enabled protocol ieee
+  Root ID    Priority    32778
+             Address     0005.5E44.45D1
+             Ths bridge is the root
+COPIAR CÓDIGO
+Observe que a prioridade não é exatamente 32.768, mas sim 32.778. Por que há essa diferença? Isso ocorre porque o sistema está somando o valor padrão com 10, que é o valor que estipulamos para a VLAN.
+
+Além disso, é exibida a mensagem "This bridge is the root", ou seja, "esta ponte é a raiz". Isso significa que o Switch_B, que possui as duas portas designadas, é o switch raiz da nossa rede.
+
+Agora surge a pergunta: como o switch raiz acaba concentrando todo o tráfego da rede, será que se um switch de menor porte eventualmente se tornar o switch raiz — de acordo com o padrão do STP —, conseguiremos alterar essa configuração para indicar outro switch em nossa rede como switch raiz? A resposta é que sim, é possível!
+
+Para isso, basta inserir o comando Priority 0 em determinado switch. Se algum switch que não tem uma boa capacidade para gerenciar o tráfego acaba sendo selecionado como switch raiz, nós podemos alterar isso. Basta acessar a aba CLI do switch e indicar qual switch desejamos selecionar como raiz, atribuindo Priority 0 àquele switch para a VLAN correspondente.
+
+Conclusão
+Surge uma nova pergunta: se teremos mais de 600 dispositivos na nossa rede, haverá endereço IP para todos? Para responder a essa questão, será necessário analisar a disponibilidade de endereços. Faremos isso na sequência!
+
+@@02
+Para saber mais: importância do STP
+
+Em redes de computadores, especialmente aquelas que usam redes cabeadas no padrão ethernet, uma situação muito conhecida durante a implementação de redundâncias é loop de uma rede. Este loop pode causar problemas de desempenho e eventualmente, paralisar a rede por completo.
+Por exemplo: Imagine que somos responsáveis por configurar uma rede típica de um laboratório de pesquisa. Em um laboratório pode haver vários switches conectados para garantir que uma variedade de dispositivos, incluindo computadores de pesquisa, servidores de dados e instrumentação científica, estejam devidamente configurados em uma mesma rede. Agora, imagine que, para fornecer redundância e garantir que a rede esteja sempre disponível, seja necessário conectar os switches alocados no laboratório seguindo uma topologia de anel. Isto é, cada switch está conectado a dois outros switches, formando um loop.
+
+Vamos supor que um pacote de dados é enviado de um computador em um canto do laboratório para um servidor do outro lado. Nesta situação, os switches começam a encaminhar pacotes através da rede. No entanto, devido à topologia em anel, os pacotes podem continuar a ser encaminhado em um loop infinito entre os switches.
+
+Para evitar esse problema, o Spanning Tree Protocol (STP) foi desenvolvido e é frequentemente utilizado em redes que recorrem a topologia de malha ou em redes com links redundantes, pois ajuda a evitar os loops e garante a disponibilidade da rede.
+
+Loops de rede ocorrem quando existem múltiplos caminhos entre dois pontos da rede, o que pode ocasionar um volume muito intenso de tráfego (muitas vezes infinito), paralisando a rede.
+
+O STP cria uma topologia de árvore abrangente, desabilitando os links redundantes. Ele elege um switch como raiz da árvore e calcula o caminho mais curto para cada parte da rede a partir desse switch raiz. Os links redundantes são colocados em um estado de bloqueio e só são ativados se o link ativo falhar. Dessa forma, o STP previne loops ao mesmo tempo em que fornece uma certa medida de redundância.
+
+Para se aprofundar nos conceitos a respeito do uso do STP acesse Understanding Spanning−Tree Protocol Topology Changes - Cisco.
+
+Para mais informações a respeito do processo de configuração do STP, acesse Spanning Tree Protocol (STP) Configuration - Grandmetric.
+
+http://www.hit.bme.hu/~jakab/edu/litr/Ethernet/STP-conv.pdf
+
+https://www.grandmetric.com/knowledge-base/design_and_configure/spanning-tree-protocol-stp-configuration/
+
+
+@@03
+Faça como eu fiz: criando redundância na rede
+
+Vamos criar uma redundância em nossos links inserindo um terceiro Switch. Uma interface desse terceiro Switch será conectada ao roteador e outras duas interfaces serão conectadas a interfaces dos outros dois Switches já implementados.
+Esse novo Switch deverá transportar dados da Vlan 10 e da Vlan 20.
+
+O primeiro passo será criar essas Vlans no novo Switch, uma vez que elas não possuem tais Vlans configuradas. Para isso, vamos seguir a sequência:
+
+Clicamos nesse novo Switch e selecionamos a aba CLI.
+
+Entramos no modo privilegiado, digitando: enable e, posteriormente, entramos na parte de configurações com o comando configure terminal.
+
+Criamos a vlan de pesquisa, digitando vlan 10 e, em seguida, name pesquisa. Na sequência, vamos criar também a vlan do administrativo com os comandos vlan 20 e name administrativo.
+
+Posteriormente, deveríamos selecionar as interfaces para realizar a mudança do modo de operação para o encaminhamento dessas Vlans. Como estamos trabalhando com dispositivos da Cisco, não será necessário definir o modo de operação como trunk, permitindo o encaminhamento simultâneo das vlans que acabamos de configurar no Switch. O protocolo DTP está ativo por default e se encarrega de garantir esse modo de operação.
+
+Opinião do instrutor
+
+Uma vez que configuramos a Vlan 10 de pesquisa e a Vlan 20 do administrativo no novo Switch, tudo deverá estar funcionando como antes, mas agora temos uma redundância e caso algum desses links caia, teremos um outro de backup que irá assumir.
+
+@@04
+Análise de endereços IP
+
+Temos mais de 600 computadores em nossa rede e uma das questões é: teremos endereços IP suficientes para alocar todas essas máquinas?
+Análise de endereços IP
+Para verificar isso, vamos referenciar o nosso projeto. Ao clicar com o botão direito sobre o roteador, é possível acessar as configurações em execução com o comando enable e depois show running-config.
+
+enable
+COPIAR CÓDIGO
+show running-config
+COPIAR CÓDIGO
+Podemos observar que estamos utilizando um endereço de rede típico da classe C, que começa com o primeiro octeto entre 192 e 223. Vamos analisar quantos dispositivos essa classe de endereços IP nos permite endereçar.
+
+Conforme vimos no primeiro curso de redes, os endereços da classe C se iniciam com 192 até 223 no primeiro octeto e possuem uma máscara de rede padrão de 255.255.255.0. Mas o que significa esse 0 no último octeto? Ele indica que este octeto é dedicado à identificação dos hosts, ou seja, dos dispositivos e máquinas que utilizamos na rede. Os demais octetos são utilizados para identificar a própria rede.
+
+Observando o endereço que utilizado para a VLAN 10, temos o endereço de rede 192.168.10.0 e o endereço de broadcast 192.168.10.255. O endereço de broadcast é aquele que usamos para nos comunicar com todos os dispositivos na nossa rede.
+
+Quantos endereços IP temos disponíveis?
+
+Analisando o último octeto, temos 256 possibilidades de endereços IP, porém, há dois endereços dedicados e reservados: um para o broadcast e outro para a identificação da rede. Podemos considerá-los como limites inferior e superior dos endereços IP disponíveis. Portanto, só temos 254 endereços disponíveis para identificar nossos dispositivos.
+
+Isso traz um problema: precisamos comportar 600 máquinas. Poderíamos pensar em alocar 400 máquinas na VLAN 10 da pesquisa e 400 na VLAN administrativa, por exemplo, de modo a atender a demanda dessas duas VLANs.
+
+Nesse caso, a classe C não nos atenderia e precisaríamos analisar a próxima: a classe B.
+
+Os endereços da classe B começam com o primeiro octeto de 128 a 191, com uma máscara de rede padrão de 255.255.0.0, ou seja, temos dois octetos para identificar os hosts em nossa rede.
+
+Quantos endereços IP teremos disponíveis se utilizarmos a classe B?
+
+Desde o início, utilizamos o termo octeto para nos referir ao endereço IP, composto do primeiro, segundo, terceiro e quarto octeto que constituem um endereço IP para uma máquina, rede ou broadcast. No entanto, temos utilizado sequências de no máximo três dígitos para representar os números em cada octeto. Assim, por que usamos o termo octeto?
+
+Na verdade, usamos a base decimal na identificação dos endereços, pois é a base com a qual estamos mais acostumados no dia a dia, seja para contabilizar nosso rendimento, seja para contar itens que utilizamos frequentemente. Porém, no mundo da computação, a principal linguagem utilizada para representação dos dados é a binária.
+
+Desse modo, a máscara de rede padrão da classe B, 255.255.0.0, na forma binária, é constituída por uma sequência de 1 e 0. Nota-se que 255 é o limite, ou seja, o maior número possível dentro de um octeto. Isso ocorre porque este é o maior número decimal que pode ser representado com oito bits em binário, por uma sequência de 1.
+
+Como obter o valor de um número representado em binário?
+
+Teremos uma atividade no decorrer do curso que permitirá um melhor entendimento, mas podemos adiantar que o valor representado por uma determinada sequência de algarismos em uma base depende da posição em que cada algarismo está na base.
+
+Por exemplo: se convertermos o número 255 para uma soma de potências de 10, será 2 vezes 10 elevado a 2, mais 5 vezes 10 elevado a 1, mais 5 vezes 10 elevado a 0. Se fizermos essa soma, obteremos exatamente o valor 255 representado.
+
+Se fizermos esse cálculo para um binário, começaremos com 1 vezes 2 elevado a 0, mais 1 vezes 2 elevado a 1, e assim sucessivamente, até obter o valor final 255 em uma sequência de 8 bits 1.
+
+Agora que o termo octeto faz sentido para nós, vamos descobrir quantos endereços IP podemos conseguir com um endereço da classe B.
+
+Conforme mencionado anteriormente e bastante estudado no curso 1, em uma máscara de rede, quando temos o número 0 em determinado octeto, indica que esse octeto é dedicado à identificação do host, isto é, das máquinas que podemos conectar na rede.
+
+Analisando a máscara padrão da classe B (255.255.0.0), temos dois octetos destinados à identificação. Preenchemos esses octetos com 0 e os demais com 1, que é o equivalente em binário. Para descobrirmos quantos dispositivos podemos identificar usando o endereço da classe B, basta contarmos a quantidade de zeros na máscara de rede, ou seja, a quantidade de bits destinados à identificação.
+
+Neste caso, temos 16 bits: 11111111.11111111.00000000.00000000.
+
+Vamos fazer um cálculo rápido: 2 elevado a 16 menos 2. A subtração por 2 corresponde aos dois endereços reservados, o endereço de rede e o endereço de broadcast, ou limite inferior e superior do endereçamento. Obteremos 65.534 endereços IPs disponíveis usando a classe B.
+
+Conclusão
+Isso atende bem à nossa demanda. Podemos usar, por exemplo, o endereço 172.16.0.0 para identificar nossa rede. Mas será eficiente usar esse endereço para identificar 400 máquinas, tendo mais de 65 mil endereços disponíveis?
+
+Será que não podemos refinar um pouco para termos uma quantidade de endereços IP disponíveis mais próxima da nossa demanda e uma alocação eficiente?
+
+Na sequência, abordaremos como obter um endereço IP mais otimizado!
+
+@@05
+Distribuição eficiente de endereços IP
+
+Estamos com uma questão: como distribuir endereços IP de forma mais eficiente, para não desperdiçar uma série de endereços e sem deixar de atender a nossa demanda?
+Sabemos que precisamos de, no máximo, 400 endereços IP para cada uma das VLANs que configuramos e, na classe B, teremos mais de 65 mil endereços disponíveis.
+
+Classe B
+Endereços IP: 128-191 no primeiro octeto Máscara de rede: 255.255.0.0
+
+172.16.10.1
+
+Endereço de rede: 172.16.0.0
+
+Endereço de broadcast: 172.16.255.255
+
+Se pensarmos, por exemplo, no caso do provedor de serviços de rede, ele recebe uma quantidade limitada de endereços IP e não faz sentido desperdiçá-los, porque cada endereço representa um custo. Cada endereço é disponibilizado por uma agência reguladora de telecomunicações e deve ser utilizado, não pode ficar ocioso ou atendendo uma demanda irreal.
+
+Dessa forma, é muito importante nos atentarmos a como fazer uma distribuição eficiente de endereços IP. Se observarmos no contexto do primeiro curso, nós estudamos algumas classes e, em cada classe, tínhamos uma máscara padrão. De acordo com a máscara padrão de rede de cada uma das classes, podíamos calcular a quantidade de endereços IP disponíveis.
+
+Padrão Classful
+Classe de endereçamento	Intervalo do primeiro octeto	Máscara de rede	Endereços disponíveis (hosts)
+A	1-126	255.0.0.0	16.777.214
+B	127-191	255.255.0.0	65.534
+C	192-223	255.255.255.0	254
+Em suma, na classe A, tínhamos mais de 16 milhões de endereços IP, na classe B mais de 65 mil e na classe C apenas 254. Esse padrão surgiu nos idos de 1990, quando a demanda por endereços IP ainda era muito pequena em comparação com hoje, onde temos um número crescente de dispositivos na rede. Esse é o padrão classful.
+
+Entretanto, uma maneira de distribuir esses endereços IP de forma eficiente seria alterar a máscara de rede. Ao invés de simplesmente usarmos a máscara de rede padrão de cada uma das classes, podemos alterá-la segundo a nossa demanda de endereços IP. Como fazemos isso?
+
+O primeiro passo consiste em converter a nossa demanda, conforme o número de máquinas que queremos conectar na rede, para um número binário. Vamos pegar um exemplo de 400 máquinas que queremos atender em cada uma das VLANs, e fazer essa conversão para binário.
+
+Demanda de endereços IP: 400
+Conversão para base binária: 110010000 (9 bits)
+
+Classe B
+
+** Endereço: 172.16.0.0**
+
+Máscara de rede: 255.255.0.0
+
+11111111.11111111.00000000.00000000
+
+Para isso, podemos utilizar a calculadora do computador, por exemplo, no modo programador, e realizar a conversão da base decimal para binária, hexadecimal ou octal. Se fizermos essa conversão, obteremos um número de 9 bits, representados por uma sequência de zeros e uns.
+
+Lembrando que os bits à esquerda podem ser desconsiderados.
+Então, você provavelmente encontrará uma sequência de bits que tem alguns zeros à frente ao fazer essa conversão na calculadora do seu computador, mas deve pegar apenas a sequência iniciada pelo 1, já que o zero à esquerda será zero vezes 2 elevado a qualquer número (uma potência), e isso não representa nenhum valor quando fazemos o somatório das potências.
+
+Fizemos a conversão da demanda de endereços IP que temos em cada uma das nossas VLANs. E, o que faremos com esse número binário? Agora, temos que alterar a máscara de rede padrão que temos na classe B.
+
+Vamos preencher essa máscara com zeros, usando apenas o número de bits necessários para representar a nossa demanda por endereços IP. No nosso caso - 400 convertido para a base binária - só precisamos de 9 bits para representar esse número. Então, vamos começar da direita para a esquerda, preenchendo com 9 zeros, começando pelo último octeto.
+
+Para a nossa máscara de rede, vamos precisar de 8 bits do último octeto e apenas de 1 bit do terceiro octeto. E o que faremos com os demais bits? Preencheremos todos com 1.
+
+Classe B
+Endereço: 172.16.0.0
+
+Máscara de rede ajustada
+
+11111111.11111111.11111110.0 0 0 0 0 0 0 0
+
+Agora, vamos fazer a conversão dessa máscara de rede que está em binário para decimal. Nesse processo de conversão, obteremos uma nova máscara de rede, que chamamos de máscara de rede ajustada à nossa demanda.
+
+Classe B
+Endereço: 172.16.0.0
+
+Máscara de rede ajustada
+
+11111111.11111111.11111110.0 0 0 0 0 0 0 0
+
+255.255.254.0
+
+Então, uma sequência "255.255.254.0". Esse "254" pode causar estranheza, mas nada mais é do que a conversão da sequência que está no terceiro octeto.
+
+Se fizermos a conta de quantos endereços IP nós temos disponíveis com essa nova máscara de rede, o cálculo será 2 elevado ao número de bits que possuímos nessa máscara de rede disponível para o endereçamento dos hosts (hospedeiros).
+
+No nosso caso, nós temos 9. Então, 2 elevado a 9 menos 2, referente aos dois endereços reservados, e obtemos o número 510.
+
+IPS disponíveis . 2^9 - 2 = 510
+Nesse caso, podemos endereçar até 510 dispositivos, hosts, usando essa máscara de rede ajustada.
+
+Disto, surge a pergunta: como definir qual será o endereço de rede e qual o endereço broadcast de cada uma dessas sub-redes criadas ao particionarmos o endereço da classe B - da máscara de rede padrão - para uma máscara de rede ajustada para as nossas VLANs?
+
+Além disso, é importante ressaltar que existe uma forma alternativa de representar essa máscara de rede ajustada. Podemos usar o padrão conhecido como CDIR (Classless Inter-Domain Routing).
+
+Endereço de rede: 172.16.0.0
+Máscara de rede: 255.255.254.0
+
+Classless Inter-Domain Routing (CIDR) 172.16.0.0/23
+
+O CIDR consiste em primeiro representar o endereço IP que usaremos para a nossa rede, que é "172.16.0.0/23". Em seguida, colocamos o número de bits 1 na máscara de rede ajustada que criamos. No nosso caso, foram 23 bits 1 contra apenas 9 bits 0. Aqui temos esse padrão alternativo de representação da máscara de rede ajustada.
+
+@@06
+Para saber mais: definindo endereços IP
+
+Os endereços IP são fundamentais para o funcionamento de qualquer rede de computadores, seja na Internet ou em redes privadas. Eles são usados para identificar e localizar dispositivos em uma rede. Na definição de um endereço IP, é necessário considerar vários fatores, como a estrutura da rede, o número de dispositivos na rede, e se o endereço é para uso privado ou público.
+Os endereços IP (Internet Protocol) consistem em um conjunto único de números que identificam dispositivos em uma rede de computadores. Comumente, empregamos neste processo dois tipos de endereços de IP: o IPv4 e o IPv6.
+
+O IPv4 é um endereço de 32 bits, normalmente exibido como quatro números inteiros que variam entre 0 e 255, e que são separados por pontos (por exemplo, 192.168.1.1). No entanto, devido à escassez de endereços IPv4, o IPv6 foi introduzido, utilizando 128 bits para descrição de um endereço de IP.
+
+Para definir um endereço IP, você deve considerar a rede e a sub-rede em que o dispositivo se encontra. O endereço IP é dividido em duas partes: (i) o identificador de rede e (ii) o identificador de host. A quantidade de espaço reservado para cada um varia dependendo da classe do endereço (A, B ou C para IPv4) e da máscara de sub-rede usada.
+
+Vamos considerar duas classes principais de endereços IPv4: Classe A e Classe B. Para um endereço de Classe A, o primeiro octeto é usado para identificar a rede e os três restantes para o identificar o host. Por exemplo, em um endereço 10.0.0.1, "10" é o identificador de rede e "0.0.1" é o identificador de host. Em um endereço de Classe B, os dois primeiros octetos são usados para o identificar a rede e os dois restantes para identificar o host. Por exemplo, em um endereço 172.16.0.1, "172.16" é o identificador de rede e "0.1" é o identificador de host.
+
+Ainda, quando você precisa expressar um endereço IPv4 em um espaço de endereço IPv6, é comum realizar um processo definido como "endereço IPv4-mapeado em IPv6". Isso envolve colocar o endereço IPv4 no final do endereço IPv6.
+
+Por exemplo, o endereço IPv4 "172.16.0.1" pode ser representado em um endereço IPv6 como "0:0:0:0:0:FFFF:AC10:0001". Os quatro zeros na frente representam a parte "padrão" do endereço IPv6, enquanto "FFFF" é usado para indicar que os próximos 32 bits são um endereço IPv4. Os últimos dois grupos de dígitos são a representação hexadecimal do endereço IPv4 (AC10:0001 é a representação hexadecimal de 172.16.0.1).
+
+@@07
+Calculando um endereço de IP
+
+Hoje ainda se fala em classes de endereço IP. divididas em cinco principais: Classe A, Classe B, Classe C, Classe D e Classe E. Cada uma tem um intervalo específico de endereços IP disponíveis. Considere uma instituição de ensino superior com 2500 alunos, 120 professores e convidados externos.
+Qual é a classe de endereço IP mais adequada para ser usada na rede da instituição?
+
+Classe E
+ 
+Alternativa correta
+Classe C
+ 
+Alternativa correta
+Classe B
+ 
+A Classe B, com endereços de 128.0.0.0 a 191.255.0.0, suporta até 65,534 hosts em cada rede (2^16 - 2 = 65,534). Essa quantidade pode acomodar confortavelmente o número de alunos (2500), professores (120) e ainda teria espaço para convidados externos e crescimento futuro.
+Alternativa correta
+Classe A
+ 
+Alternativa correta
+Classe D
+
+@@08
+Configurando as sub-redes
+
+Definimos uma nova máscara de rede conforme a nossa demanda de endereços IP, no entanto, havia uma dúvida no ar:
+Qual seria o endereço de identificação de cada uma dessas sub-redes criadas a partir do particionamento do conjunto de mais de 65 mil endereços IP em 510, um para cada sub-rede, e qual seria o seu respectivo endereço de broadcast?
+É o que definiremos agora.
+
+Primeiro, temos que fazer alguns pequenos cálculos que logo farão sentido. Vamos pegar a máscara de rede, não no formato decimal que obtivemos, mas no formato binário mesmo.
+
+Lembram da máscara de rede que obtivemos, que era "255.255.254.0"? Pegaremos sua respectiva representação em binário e identificaremos em qual octeto ocorre a transição dos bits 1 para os bits 0.
+
+Endereço de rede: 172.16.0.0
+Máscara de rede: 255.255.254.0
+
+Passo 1 - Representação binária da máscara de rede
+
+11111111.11111111.11111110.0 0 0 0 0 0 0 0
+
+Passo 2 - Verificar o octeto em que ocorre a transição de bit 1 para 0
+
+11111111.11111111.11111110.0 0 0 0 0 0 0 0
+
+3° octeto
+
+Isso ocorre no terceiro octeto, sempre partindo da esquerda para a direita.
+
+Na sequência, vamos identificar qual é a posição do último bit 1 dentro desse terceiro octeto da esquerda para a direita.
+
+Passo 3 - Identificar a posição de ocorrência do último bit 1
+11111111.11111111.11111110.0 0 0 0 0 0 0 0
+
+Ordenamento: 128 - 64 - 32 - 16 - 8 - 4 - 2 - 1
+
+Posição: 2
+
+Observando a nossa máscara de rede ajustada, temos o último bit 1 na posição 2. Qual posição é essa? Quando fazemos o cálculo de que quantidade decimal está sendo representada por uma sequência de bits em binário, cada bit possui um determinado valor na soma de potência. Então, basicamente, esse valor representa a posição ocupada pelo bit 1.
+
+Dentro dos nossos octetos, temos uma lógica que começa com 1, vai para 2, que é 1 vezes 2 elevado a 0, mais 1 vezes 2 elevado a 1, e assim sucessivamente. Assim, temos uma sequência de 1, 2, 4, 8, 16, 32, 64, até chegar no último bit 1, que será equivalente à posição 128.
+
+Identificamos onde ocorre essa transição, qual a posição ocupada por esse último bit dentro desse octeto da transição, mas para que utilizamos isso? Justamente, para fazer a identificação do endereço da sub-rede.
+
+IP de Rede: 172.16.0.0
+IP Broadcast: 172.16.255.255
+
+IP sub-rede 1:
+
+IP broadcast sub-rede 1:
+
+IP sub-rede 2:
+
+IP broadcast sub-rede 2:
+
+IP sub-rede 3:
+
+IP broadcast sub-rede 3:
+
+IP sub-rede n:
+
+IP broadcast sub-rede n:
+
+No caso do endereço da sub-rede dentro da classe B, escolhemos o endereço "172.16.0.0". Podemos alocar este endereço como o da sub-rede 1.
+
+IP de Rede: 172.16.0.0
+IP Broadcast: 172.16.255.255
+
+IP sub-rede 1: 172.16.0.0
+
+IP broadcast sub-rede 1:
+
+IP sub-rede 2:
+
+IP broadcast sub-rede 2:
+
+IP sub-rede 3:
+
+IP broadcast sub-rede 3:
+
+IP sub-rede n:
+
+IP broadcast sub-rede n:
+
+Agora você deve estar se perguntando como identificar a "sub-rede 2", a "sub-rede 3", e a "sub-rede n" nessa nova máscara de rede ajustada?
+
+Basicamente, vamos somar a posição do último bit 1, que é 2, no octeto em que ocorre a transição, que no nosso caso é o terceiro octeto.
+
+Então, para identificar o próximo endereço de sub-rede, vamos somar 2 no terceiro octeto. Logo, o próximo endereço de sub-rede será "172.16.2.0".
+
+IP de Rede: 172.16.0.0
+IP Broadcast: 172.16.255.255
+
+IP sub-rede 1: 172.16.0.0
+
+IP broadcast sub-rede 1:
+
+IP sub-rede 2: 172.16.2.0
+
+IP broadcast sub-rede 2:
+
+IP sub-rede 3:
+
+IP broadcast sub-rede 3:
+
+IP sub-rede n:
+
+IP broadcast sub-rede n:
+
+E o próximo endereço de sub-rede após este? Será "172.16.4.0".
+
+IP de Rede: 172.16.0.0
+IP Broadcast: 172.16.255.255
+
+IP sub-rede 1:172.16.0.0
+
+IP broadcast sub-rede 1:
+
+IP sub-rede 2:172.16.2.0
+
+IP broadcast sub-rede 2:
+
+IP sub-rede 3: 172.16.4.0
+
+IP broadcast sub-rede 3:
+
+IP sub-rede n:
+
+IP broadcast sub-rede n:
+
+Se tivéssemos listado aqui a sub-rede 4, seria "172.16.6.0". Isso ocorre sucessivamente até chegarmos na sub-rede N, que é a última sub-rede dentro dessa máscara de rede ajustada, que é "172.16.254.0". Simples, não é?
+
+Mas, como definimos o endereço de broadcast? No endereço de rede e no endereço de broadcast, que são endereços reservados dentro das classes, há um limite inferior e um limite superior ao conjunto de endereços IP que conseguimos usar para classificar e identificar dispositivos na rede.
+
+O endereço de rede atua como limite inferior e o endereço de broadcast como limite superior. Se pegarmos, por exemplo, o IP de broadcast da sub-rede 1, qual seria esse endereço?
+
+Neste conceito de limites, o endereço de broadcast será o endereço imediatamente anterior ao endereço da sub-rede 2 e o broadcast da sub-rede 2 será exatamente o endereço IP imediatamente anterior ao da sub-rede 3, e assim sucessivamente. Além disso, o endereço de broadcast da sub-rede-n será "172.16.255.255".
+
+IP de Rede: 172.16.0.0
+IP Broadcast: 172.16.255.255
+
+IP sub-rede 1: 172.16.0.0
+
+IP broadcast sub-rede 1:
+
+IP sub-rede 2: 172.16.2.0
+
+IP broadcast sub-rede 2:
+
+IP sub-rede 3: 172.16.4.0
+
+IP broadcast sub-rede 3:
+
+IP sub-rede n: 172.16.254.0
+
+IP broadcast sub-rede n:
+
+Então, tendo, por exemplo, o endereço IP da sub-rede basta subtrair 1 para chegar ao IP de broadcast da sub-rede 1. Fazendo esta subtração - que não é uma subtração numérica convencional, sempre usamos a base binária - o resultado é o endereço "172.16.1.255". Este será o broadcast da sub-rede 1.
+
+Se a mesma lógica for seguida, subtraindo 1 do endereço da sub-rede 3, obteremos o broadcast da sub-rede 2, que será "172.16.3.255", e assim sucessivamente. O valor "172.16.5.255" será o endereço de broadcast da sub-rede 3, e o último endereço, conforme comentado anteriormente, que é o "172.16.255.255", será o broadcast da sub-rede n, a última na nossa máscara de rede ajustada.
+
+IP de Rede: 172.16.0.0
+IP Broadcast: 172.16.255.255
+
+IP sub-rede 1: 172.16.0.0
+
+IP broadcast sub-rede 1: 172.16.1.255
+
+IP sub-rede 2: 172.16.2.0
+
+IP broadcast sub-rede 2: 172.16.3.255
+
+IP sub-rede 3: 172.16.4.0
+
+IP broadcast sub-rede 3: 172.16.5.255
+
+IP sub-rede n: 172.16.254.0
+
+IP broadcast sub-rede n: 172.16.255.255
+
+Agora que já sabemos como calcular e obter o endereço de broadcast e o endereço de cada uma das sub-redes após ajustarmos a máscara para uma alocação mais eficiente dos endereços IP, vamos configurar este endereço de sub-rede em nosso projeto para o Instituto Inovae.
+
+Considerando que temos duas VLANs, podemos pegar, por exemplo, o endereço da sub-rede 1 e alocar para a VLAN 10, a VLAN de pesquisa, e alocar o endereço da sub-rede 2 para a VLAN administrativa.
+
+Cada uma delas, conforme comentado anteriormente, deveria ter no mínimo 400 endereços IP disponíveis para cada uma das VLANs, prevendo a demanda de 600 máquinas em todo o instituto.
+
+Então, como realizamos essa configuração? Utilizamos nosso roteador no Cisco Packet Tracer, nosso ambiente de teste. Clicamos com o botão direito, vamos à aba CLI. Por padrão, ele iniciará no modo sem muitos privilégios. Passaremos o comando enable, seguido de configure terminal.
+
+Router>enable
+Router#configure terminal
+Enter configuration commands, one per line. End with
+CNTL/Z.
+Router(config) #
+COPIAR CÓDIGO
+Após isso, vamos acessar o pool DHCP da VLAN 10.
+
+Router>enable
+Router#configure terminal
+Enter configuration commands, one per line. End with
+CNTL/Z.
+Router(config) #ip dhcp pool vlan10
+COPIAR CÓDIGO
+Em seguida, vamos inserir o comando network 172.16.0.0, pois este é o endereço da sub-rede 1 que foi usado para a VLAN 10.
+
+Router>enable
+Router#configure terminal
+Enter configuration commands, one per line. End with
+CNTL/Z.
+Router(config) #ip dhcp pool vlan10
+Router(dhcp-config) #network 172.16.0.0
+COPIAR CÓDIGO
+Também temos que informar a nova máscara de rede ajustada, que tem o padrão "255.255.254.0".
+
+Router>enable
+Router#configure terminal
+Enter configuration commands, one per line. End with
+CNTL/Z.
+Router(config) #ip dhcp pool vlan10
+Router(dhcp-config) #network 172.16.0.0 255.255.254.0
+COPIAR CÓDIGO
+Está faltando um detalhe: precisamos configurar o comando default-router. Geralmente, utilizamos o primeiro endereço IP disponível, que é "172.16.0.1".
+
+Router>enable
+Router#configure terminal
+Enter configuration commands, one per line. End with
+CNTL/Z.
+Router(config) #ip dhcp pool vlan10
+Router(dhcp-config) #network 172.16.0.0 255.255.254.0
+Router(dhcp-config) #default-router 172.16.0.1
+COPIAR CÓDIGO
+Após a configuração da VLAN 10, precisamos repetir os mesmos comandos para a VLAN 20. Entraremos no ip dhcp pool vlan20 e usaremos o comando network 172.16.2.0, que é o endereço da subrede 2. Adicionaremos nossa máscara de rede ajustada, "255.254.0", seguida do comando default-router. Em vez de usar 1"72.16.0", usamos "172.16.2.1".
+
+Router>enable
+Router#configure terminal
+Enter configuration commands, one per line. End with
+CNTL/Z.
+Router(config) #ip dhcp pool vlan10
+Router(dhcp-config) #network 172.16.0.0 255.255.254.0
+Router(dhcp-config) #default-router 172.16.0.17
+Router(dhcp-config) #exit
+Router(configr) #ip dhcp pool vlan20
+Router(dhcp-config) #network 172.16.2.0 255.255.254.0
+Router(dhcp-config) #default-router 172.16.2.1
+COPIAR CÓDIGO
+Depois da configuração das VLANs, o próximo passo é configurar as subinterfaces, ou seja, fazer a atribuição de endereços para cada uma delas.
+
+Já realizamos as atribuições utilizando os novos endereços de sub-rede para cada uma das VLANs que criamos. O que falta fazer? Precisamos atribuir esses novos endereços às nossas sub-interfaces, uma para cada uma das VLANs.
+
+Vamos começar pela sub-interface 1. Já estamos aqui no modo de configuração, então acessaremos interface fast ethernet 0/0.1.
+
+Router>enable
+Router#configure terminal
+Enter configuration commands, one per line. End with
+CNTL/Z.
+Router(config) #ip dhcp pool vlan10
+Router(dhcp-config) #network 172.16.0.0 255.255.254.0
+Router(dhcp-config) #default-router 172.16.0.17
+Router(dhcp-config) #exit
+Router(config) #ip dhcp pool vlan20
+Router(dhcp-config) #network 172.16.2.0 255.255.254.0
+Router(dhcp-config) #default-router 172.16.2.1
+Router(dhcp-config) #exit
+Router(config) #interface Fa 0/0.1
+COPIAR CÓDIGO
+Qual comando utilizamos agora? O ip address, e vamos entrar com o novo endereço dessa sub-interface, que é "172.16.0.1" e também com a máscara de rede ajustada, "255.255.254.0". Agora podemos dar um exit.
+
+// código omitido. 
+
+Router(config) #interface Fa 0/0.1
+Router(config-subif) # ip address 172.16.0.1 255.255.254.0 
+Router(dhcp-config) #exit
+COPIAR CÓDIGO
+Vamos repetir o mesmo processo para a sub-interface 2. Para isso, utilizamos o comando Fa 0/0.2. Também usaremos o mesmo comando, ip address, mas precisamos alterar o endereço para "172.16.2.1", não por acaso o mesmo endereço do default router (roteador padrão), como já sabemos.
+
+// código omitido. 
+
+Router(config) #interface Fa 0/0.1
+Router(config-subif) # ip address 172.16.0.1 255.255.254.0 
+Router(dhcp-config) #exit
+Router(config) #interface Fa 0/0.2
+Router(config-subif) # ip address 172.16.2.1 255.255.254.0
+COPIAR CÓDIGO
+Com tudo configurado no nosso roteador, o que precisamos fazer para encerrar e ter toda a nossa rede funcionando dentro dessa nova configuração, é realizar novas requisições de DHCP para cada um dos PCs que temos e, na sequência, o teste de conectividade para conferir se está tudo funcionando corretamente.
+
+Agora vamos fazer essas novas requisições de DHCP, clicando em cada um dos PCs, lá no "Desktop > IP configuration", mudamos o DHCP para "static" (estático) e depois para o modo DHCP.
+
+Perceba que esse processo de requisição obteve êxito, o PC do pesquisador pegou o endereço da VLAN da pesquisa dentro do endereço que havíamos configurado, tudo certinho. Também pegou o default gateway (gateway padrão). Está tudo certo! Vamos replicar o processo rapidamente.
+
+Finalizamos as requisições de DHCP. Vamos pegar o último endereço que é "172.16.2.3", da coordenação do Laboratório B, e vamos fazer um teste de conectividade com o PC do pesquisador A.
+
+Então vamos acessar o "Command Prompt" (prompt de comando), passar ping 172.16.2.3, e conferir se obteremos um ping de sucesso. O primeiro não foi, mas o segundo foi, então, ótimo, nossa rede está funcionando!
+
+Agora, qual vai ser o nosso próximo passo? Precisaremos incluir um servidor de acesso restrito, ou seja, um servidor com algumas informações apenas para gerentes e coordenadores. Como faremos isso? É o que vamos analisar em seguida!
+
+@@09
+Configurando as sub-redes
+
+Um FabLab dentro de uma instituição de ensino superior precisa acomodar estudantes, professores e pessoas convidadas da comunidade com acesso à rede, ou seja, é necessário configurar um conjunto de sub-redes
+Qual seria a forma ideal para essa configuração?
+
+Configurar duas sub-redes, uma para membros internos (estudantes, professores, pessoas técnicas) e outra para convidadas da comunidade.
+ 
+Configurar duas sub-redes, uma para membros internos e outra para pessoas convidadas da comunidade fornece a segmentação necessária do tráfego de rede, ao mesmo tempo que mantém a gestão da rede manejável. Esta abordagem permite controle de acesso diferenciado e aumenta a segurança da rede, separando o tráfego interno do tráfego de convidados.
+Alternativa correta
+Configurar uma única sub-rede para todas as pessoas usuárias.
+ 
+Alternativa correta
+Não usar sub-redes, pois elas não ajudam na segmentação do tráfego de rede.
+ 
+Alternativa correta
+Configurar uma sub-rede separada para cada tipo de usuário.
+ 
+Alternativa correta
+Configurar uma sub-rede para cada usuário individual.
+
+10
+Faça como eu fiz: alocando endereços IP de modo eficiente
+
+Ao usarmos um endereço IP da classe B para endereçamento de 400 máquinas alocadas em uma rede, teremos um grande volume de endereços que estarão reservados para uso. Porém, não serão efetivamente empregados na rede.
+Para evitar a ineficiência dessa forma de uso conhecida como padrão Classful, podemos ajustar a máscara de rede em função da demanda específica de uma subrede de modo que tenhamos uma alocação eficiente de endereços.
+
+O processo de alocação eficiente começa com a definição da máscara de rede. O primeiro passo consiste no cálculo da nossa demanda de endereços, ou seja, quantos dispositivos estão inseridos em nossa rede (notebooks, desktops, smartphones, smartvs, etc).
+
+Uma vez definida nossa demanda, vamos converter esse número da base decimal - 400 endereços - para sua representação equivalente na base binária: 110010000 endereços (verifique essa conversão usando a calculadora do seu PC no modo programador!). Observe que precisamos de 9 bits para representar a nossa demanda por endereços na base binária. Com esse dado, vamos analisar a máscara de rede. Confira na sequência:
+
+Demanda de endereços IP → 400
+
+Conversão para base binária → 110010000 (9 bits)
+
+Classe B
+
+Endereço → 172.16.0.0
+
+Máscara de rede (base decimal) → 255.255.0.0
+
+Máscara de rede (base binária) → 1 1 1 1 1 1 1 1 . 1 1 1 1 1 1 1 1 . 0 0 0 0 0 0 0 0 . 0 0 0 0 0 0 0 0
+
+Vamos precisar somente dos 9 últimos bits da máscara de rede para alocação dos 400 endereços IP dos dispositivos de cada vlan do Instituto Inovae. Sendo assim, inserimos 0 nos bits da máscara que serão usados na especificação dos endereços dos dispositivos conectados em cada vlan, enquanto isso, preenchemos os demais bits da máscara com 1. Confira:
+
+Máscara de rede ajustada (base binária) → 1 1 1 1 1 1 1 1 . 1 1 1 1 1 1 1 1 . 1 1 1 1 1 1 1 0 . 0 0 0 0 0 0 0 0
+
+Agora, podemos converter a máscara de rede ajustada para sua respectiva representação na base decimal. A conversão é simples, basta convertermos a sequência de bits inserida em cada octeto.
+
+Máscara de rede ajustada (base decimal) → 255.255.254.0
+
+Com 9 bits disponíveis para o endereçamento dos dispositivos, temos a disponibilidade de quantos endereços IP?
+
+2^9 - 2 = 510 endereços disponíveis
+O cálculo acima leva em consideração que temos 2 endereços reservados: um para identificação da rede e outro para a comunicação broadcast. Por isso, fizemos essa subtração de dois endereços do resultado 2^9.
+
+Podemos representar a máscara de rede obtida utilizando a notação Classless Inter-Domain Routing (CDIR). Nessa notação, especificamos o endereço de rede que estamos usando (172.16.0.0) e, na sequência, inserimos uma barra para especificar o número de bits 1 na máscara de rede ajustada (23 bits 1 e 9 bits 0, no nosso caso). Dessa forma, obtemos a seguinte representação:
+
+172.16.0.0/23
+Para definição dos endereços de subredes e broadcast, precisamos analisar a máscara de rede ajustada na forma binária para obter dois parâmetros:
+
+1 - Octeto em que ocorre transição de bits de 1 para 0. No nosso caso, a transição ocorre no terceiro octeto.
+
+1 1 1 1 1 1 1 1 . 1 1 1 1 1 1 1 1 . 1 1 1 1 1 1 1 0 . 0 0 0 0 0 0 0 0
+2 - Posição de ocorrência do último bit 1 na máscara. Como trabalhamos com sistemas de numeração posicionais, cada bit possui um certo valor referente à sua posição em uma sequência. Em uma sequência de 8 bits na base binária, temos os seguintes valores da direita para a esquerda: 128 - 64 - 32 - 16 - 8 - 4 - 2 - 1. Tais valores foram obtidos, respectivamente, a partir das seguintes potências: 2^7- 2^6 - 2^5 - 2^4 - 2^3 - 2^2 - 2^1 - 2^0.
+
+No caso da máscara que estamos analisando, a posição referente ao último bit 1 é a de valor 2.
+
+O que fazemos com tais parâmetros? Utilizamos para calcular os endereços de sub-rede e broadcast.
+
+Começamos definindo o endereço da primeira sub-rede (sub-rede 1) e o endereço de broadcast da última sub rede (vamos chamar de sub-rede n), respectivamente: 172.16.0.0 e 172.16.255.255.
+
+A partir daí, calculamos o endereço da próxima sub-rede (sub-rede 2, sub-rede 3 e assim sucessivamente) somando 2 (posição referente ao último bit 1 na máscara de rede ajustada) ao terceiro octeto (octeto de transição dos bits 1 a 0 na máscara de rede ajustada) do endereço da sub-rede anterior.
+
+O endereço broadcast é determinado de forma mais simples, ele é o endereço IP imediatamente anterior ao endereço IP da próxima sub-rede, sendo assim ele é o “último” endereço IP de uma sub-rede (podemos entender como limite superior no endereçamento de uma sub-rede). Desse modo, podemos obtê-lo subtraindo uma unidade no endereço da próxima sub-rede. Só precisamos estar atentos que não se trata de uma subtração decimal, ou seja, é uma subtração binária.
+
+Sendo assim, obtemos a seguinte sequência de endereços reservados:
+
+IP sub-rede 1: 172.16.0.0
+IP broadcast sub-rede 1: 172.16.1.255
+
+IP sub-rede 2: 172.16.2.0
+IP broadcast sub-rede 2: 172.16.3.255
+
+IP sub-rede 3: 172.16.4.0
+IP broadcast sub-rede 3:172.16.5.255
+
+…
+
+IP sub-rede n: 172.16.254.0
+IP broadcast sub-rede n:172.16.255.255
+COPIAR CÓDIGO
+Agora que já definimos uma máscara de rede ajustada à nossa demanda, precisamos mudar os endereços que estamos utilizando em nossa rede. Vamos acessar o roteador e fazer esses ajustes:
+
+Clique no roteador, acesse a aba CLI, digite enable e, na sequência, digite configure terminal;
+
+Vamos entrar no pool dhcp da vlan de pesquisa com o comando ip dhcp vlan10 e mudar o endereço com o comando network 172.16.0.0 255.255.254.0;
+
+Já vamos deixar o default gateway configurado com o comando default router 172.16.0.1;
+
+Vamos repetir o processo para a vlan do administrativo usando os comandos ip dhcp vlan20, network 172.16.2.0 255.255.254.0 e default router 172.16.2.1 na mesma ordem;
+
+Por fim, precisamos ajustar os endereços alocados nas subinterfaces. Vamos sair do pool dhcp das vlans, retornando ao modo geral de configuração para acessar cada subinterface e designar seu novo endereço IP. Dessa forma, vamos aplicar a seguinte sequência de comandos: interface Fa 0/0.1, ip address 172.16.0.1 255.255.254.0, exit, interface Fa 0/0.2, ip address 172.16.2.1 255.255.254.0.
+
+Agora, basta clicar em cada PC, fazer novas requisições DHCP e realizar o teste de conectividade usando o comando ping no prompt de comando.
+
+Opinião do instrutor
+
+Tudo deverá estar funcionando como antes, mas agora temos uma maior capacidade de endereçamento de dispositivos em nossa rede que atende de modo eficiente a demanda do Instituto Inovae.
+
+@@11
+O que aprendemos?
+
+Nessa aula, você aprendeu como:
+Criar redundâncias para evitar perdas de conexão entre as diferentes partes de uma rede;
+Utilizar o protocolo STP para evitar a formação de loops em redes;
+Organizar um projeto de rede em subredes com a alocação de endereços IP de modo eficiente.
