@@ -1599,3 +1599,354 @@ Nessa aula, você aprendeu como:
 Criar redundâncias para evitar perdas de conexão entre as diferentes partes de uma rede;
 Utilizar o protocolo STP para evitar a formação de loops em redes;
 Organizar um projeto de rede em subredes com a alocação de endereços IP de modo eficiente.
+
+@03-Tráfego de rede
+
+@@01
+Protocolos TCP e UDP
+
+Um dos requisitos do nosso projeto era a inclusão de alguns servidores na nossa rede. No entanto, esses servidores precisam ter um acesso mais exclusivo, destinado apenas, por exemplo, à gerência e à coordenação.
+Isso se deve ao tipo de informação que será armazenada nesses servidores, que serão mais administrativas e estratégicas para o Instituto Inovae. Portanto, teremos que configurar um acesso mais restrito.
+
+Começaremos adicionando um servidor ao nosso projeto. Para isso, na parte inferior direita clicaremos na aba de End Devices (Dispositivos de ponta). Nas opções que aparecem à direita das abas, clicaremos no server (servidor) e arrastaremos para a parte superior esquerda do projeto, na altura do switch C.
+
+A próxima etapa será conectar esse servidor com o switch C, que está diretamente ligado ao roteador. Faremos isso usando o cabo direto, então abrimos a aba "Connections" (Conexões), na parte inferior direita, clicamos no ícone do cabo direto e o arrastamos até o servidor, onde selecionamos a porta FastEthernet0. Depois puxamos o cabo para o switch C, na porta FastEthernet0/4.
+
+Após adicionarmos um servidor que terá uma política de acesso mais restrita, podemos até nomeá-lo como "Servidor_gerencia". Eventualmente, poderíamos ter outros servidores para armazenar dados de acesso geral do Instituto, mas vamos nos concentrar neste agora, devido à sua restrição de acesso.
+
+Em seguida, criaremos uma VLAN exclusiva para esses servidores. Portanto, abrimos a janela do switch C, acessamos a aba CLI e, no final da caixa de comando, executar os comandos enable e depois configura terminal.
+
+Em seguida, escreveremos vlan 30 para configurarmos a VLAN e name servidores para nomeá-la como "servidores". Nossa VLAN 30 foi configurada, então podemos executar o comando exit.
+
+enable
+configure terminal
+vlan 30
+name servidores
+exit
+COPIAR CÓDIGO
+Atenção: Escrevam uma linha de comando por vez, pressionando "Enter" depois de cada linha para executá-la.
+O próximo passo será configurar a porta FastEthernet0/4 para operar nessa VLAN e no modo acesso, porque o servidor será o dispositivo final também. Para isso, escreveremos interface Fa 0/4. Primeiramente vamos configurar o Switch C para trabalhar no modo acesso, com switchport mode access.
+
+Depois o configuramos para trabalhar na VLAN, com switchport access vlan 30. Lembrem-se de colocar o espaço em vlan 30, ou ocorrerá um erro. Feito isso, podemos executar o exit.
+
+interface Fa 0/4
+switchport mode access
+switchport access vlan 30
+exit
+COPIAR CÓDIGO
+Agora, vamos configurar essa VLAN nos demais switches que temos na nossa rede: os switch A e B. Para isso, abriremos a janela de cada switch, acessaremos o CLI e executaremos os mesmos comandos de criação da VLAN 30 que usamos antes.
+
+enable
+configure terminal
+vlan 30
+name servidores
+exit
+COPIAR CÓDIGO
+Após configurarmos os switches da nossa rede, o próximo passo é a configuração de uma subinterface do nosso roteador para que ela opere nessa VLAN. Também atribuiremos um endereço de rede para essa subinterface. Para isso, abriremos a janela do "Router1", que é o nosso roteador, acessaremos a aba CLI e executaremos os seguintes comandos enable e depois configure terminal.
+
+Usaremos o comando interface fa 0/0.3 para criar nossa terceira subinterface. O próximo passo é usar o comando encapsulation dot1Q 30 e, por fim, atribuímos um endereço de rede para essa subinterface. Usaremos o terceiro endereço de sub-rede, no caso, "172.16.4.1" para usar o primeiro endereço dessa sub-rede designar nossa interface.
+
+Também precisamos identificar nossa máscara de rede, que é "255.254.0". Portanto, nosso comando fica ip address 172.16.4 255.255.254.0. Nossa configuração foi feita, então podemos executar o exit.
+
+enable
+configure terminal
+interface Fa 0/0.3
+encapsulation dot1Q 30
+ip address 172.16.4.1 255.255.254.0
+exit
+COPIAR CÓDIGO
+Agora que configuramos a VLAN e atribuímos um IP estático ao nosso servidor. Ao clicarmos com o botão direito do mouse no servidor para abrir a janela dele, e abrirmos a aba "Services" (Serviços), encontramos o menu de serviços à esquerda e a informações desses serviços à direita. Selecionando o serviço "HTTP", teremos uma página web disponível nesse servidor.
+
+Voltaremos para nossa estrutura de rede e clicaremos em qualquer computador da nossa rede com o botão direito. Na janela desse computador, abriremos a aba "Desktop". Clicando em Web browser, que fica no canto superior direito da janela, abrimos um emulador de navegador dentro da janela.
+
+Digitando no campo URL o endereço IP que atribuímos a esse servidor, conseguiremos acessar essa página web. O que queremos é que essa página web seja acessível apenas para alguns computadores da nossa rede.
+
+Para testar isso, vamos digitar este endereço "172.16.4.2". Antes de enviarmos o endereço, vamos alterar o nosso ambiente de teste do modo "real time" para o modo "simulation", clicando no botão no canto direito da barra inferior azul. Manteremos pausado, voltaremos para a aba do web browser.
+
+No meu caso, é o computador da coordenação do laboratório B. Vamos pressionar "Enter" no campo de URL, enviando o endereço, e voltar para área de teste, visualizando os protocolos que estão ocorrendo em segundo plano ao fazermos essa solicitação de acesso ao servidor.
+
+Recebemos uma série de mensagens e o protocolo TCP ocorrendo em segundo plano. O protocolo TCP é o principal protocolo da camada de transporte. Esse protocolo permite a comunicação confiável e segura entre dois dispositivos. Ele se baseia sempre em uma troca de três mensagens do dispositivo.
+
+Nesse caso, enviamos uma primeira mensagem da coordenação para o servidor da gerência, que é uma mensagem de sincronização. Em resposta, o servidor da gerência responde ao computador da coordenação com uma mensagem de Acknowledgement (Reconhecimento), confirmando a sincronização.
+
+Em seguida, o computador da coordenação envia uma nova mensagem para estabelecer a sincronização em um canal ou porta específica. Essa sequência é o que chamamos de "aperto de mão triplo".
+
+Esse tipo de protocolo ajuda a garantir que nenhum dado seja perdido no caminho. Todas as mensagens que são enviadas de um computador para o servidor, e vice-versa, são devidamente recebidas. Se algum dado é perdido, ele é retransmitido graças à ação desse protocolo.
+
+Observando no nosso teste que, enquanto estávamos explorando o funcionamento do protocolo TCP, após o "aperto de mão triplo", o protocolo HTTP, que é responsável pelo envio das informações do servidor para o computador da coordenação, foi acionado. Portanto, antes de acessarmos os dados de fato, quem atua é o protocolo TCP.
+
+Podemos utilizar esse protocolo para implementarmos um filtro, criando uma lista de acesso em nossa rede. É importante ressaltarmos que, além do protocolo TCP, também podemos ter o protocolo UDP na camada de transporte.
+
+O protocolo UDP não privilegia tanto essa comunicação segura e confiável, ou seja, pode haver perda de dados. É um protocolo que privilegia muito mais a velocidade da conexão entre os dispositivos, muito utilizado, por exemplo, para streaming de vídeo e áudio. No entanto, a perda de informação pode ocorrer quando usamos o UDP.
+
+Para finalizar, voltamos à nossa simulação e verificamos se a página da coordenação recebeu a página que estava armazenada no nosso servidor. Para isso, voltamos para o modo "real time". Ao fazermos isso, notamos que os dados armazenados foram recebidos no web browser.
+
+Vamos realizar esse teste no computador do pesquisador B em real time, para o teste ocorrer mais rapidamente. Clicamos no computador B com o botão direito do mouse e acessamos "Desktop > Web Browser".
+
+Na barra de URL, escrevemos "172.16.4.2" e pressionamos "Enter". Ele também recebe a página. O que queremos é que essa página seja acessível apenas para os computadores da gerência e da coordenação.
+
+A estratégia para isso é criarmos uma lista de acesso. Como criamos essa lista de acesso e como ela funciona? Podemos antecipar que essa lista de acesso ficará no roteador e o roteador atuará como um porteiro.
+
+Sempre que uma requisição chega usando, por exemplo, o protocolo TCP, o sistema verifica a origem e o destino. Com base na origem e no destino, ele verifica na lista se aquele computador pode acessar o destino especificado. Se, por exemplo, esse acesso não estiver previsto na lista, o roteador simplesmente negará por padrão.
+
+Essa é uma situação na qual devemos nos atentar ao criar uma lista de acesso e configurar o nosso roteador. Aprenderemos a fazer essa configuração é a seguir.
+
+@@02
+Para saber mais: como funcionam os protocolos TCP e UDP?
+
+TCP (Transmission Control Protocol) e UDP (User Datagram Protocol) são dois dos protocolos mais comuns na camada de transporte no modelo OSI (Modelo de Interconexão de Sistemas Abertos). Ambos têm suas respectivas aplicações e são usados em diferentes cenários, dependendo das necessidades de comunicação entre dois dispositivos. Por exemplo, TCP é frequentemente usado para transmissões de dados que requerem alta confiabilidade, como navegação na web, e-mail e transferências de arquivos. Por outro lado, o UDP é mais utilizado em aplicações que requerem velocidade e eficiência, como streaming de vídeo e jogos online.
+Os protocolos TCP e UDP diferem principalmente em termos de conexão, confiabilidade, ordem e velocidade.
+
+O protocolo TCP é um protocolo orientado à conexão, o que significa que estabelece uma conexão com o destinatário antes de transmitir os dados. Ele garante a entrega de pacotes, mantém a ordem dos pacotes e realiza o controle de fluxo e congestionamento, tornando-o um protocolo confiável.
+
+Já o protocolo UDP é um protocolo sem conexão, o que significa que os dados são enviados sem estabelecer uma conexão e sem a garantia de entregar uma mensagem ou sequência de pacotes. Isso torna o UDP mais rápido e mais eficiente em termos de recursos do que o TCP, mas também menos confiável.
+
+TCP é geralmente indicado para aplicações em que a confiabilidade é mais importante do que a velocidade, enquanto UDP é melhor para aplicações em que a velocidade e a eficiência são mais importantes do que a confiabilidade.
+
+@@03
+Protocolo TCP
+
+Para haver comunicação entre o navegador e um servidor web, utilizamos um protocolo TCP, voltado à conexão e responsável por garantir a entrega confiável e ordenada de dados entre dispositivos em uma rede de computadores.
+De que forma este protocolo funciona nesta situação?
+
+Alternativa correta
+O TCP é um protocolo de transporte de melhor esforço e não garante a entrega de pacotes.
+ 
+Alternativa correta
+O TCP é um protocolo sem conexão, portanto, não há necessidade de estabelecer uma conexão antes da transmissão de dados.
+ 
+Alternativa correta
+O TCP não suporta controle de congestionamento, o que pode resultar em perda de pacotes em redes ocupadas.
+ 
+Alternativa correta
+O TCP é um protocolo orientado à conexão, o que significa que ele estabelece uma conexão antes da transmissão de dados.
+ 
+O TCP é um protocolo orientado à conexão. Ele estabelece uma conexão antes da transmissão de dados. Isso garante que o caminho esteja claro e pronto para a transferência de dados.
+Alternativa correta
+O TCP não permite o controle de fluxo, tornando-o ineficiente para redes congestionadas.
+
+@@04
+Faça como eu fiz: adicionando um servidor web
+
+Começamos adicionando um servidor ao nosso projeto com o intuito de centralizar em nossa rede alguns dados e informações estratégicas para a gestão do Instituto Inovae.
+Para isso, arraste para a área de trabalho um servidor, clicando na opção End Devices e depois selecionando a opção Server (terceira opção da esquerda para direita).
+
+Uma vez adicionado ao projeto, precisamos conectar o Servidor ao Switch C (switch diretamente conectado ao roteador). Nessa ligação utilizamos cabo direto e selecionamos uma porta FastEthernet que estava livre no Switch C (a escolha da porta não afeta o resultado final).
+
+Agora, vamos criar um vlan dedicada aos servidores. Precisaremos clicar em cada Switch (A, B e C), clicar na aba CLI, entrar no modo de configuração com os comandos enable e configure terminal e criar a vlan 30 com nome servidores usando dois comandos em sequência: vlan 30 e name servidores.
+
+No Switch C, vamos configurar a interface que está conectada ao servidor adicionado para que ela opere no modo acesso. No modo configuração, acessamos a interface com o comando interface Fa 0/4 e definimos o modo acesso com os comandos switchport mode access e switchport access vlan 30.
+
+Precisamos configurar a vlan 30 no roteador, criando uma nova subinterface que possibilite a conexão da vlan com as demais anteriormente criadas em nosso projeto. Vamos clicar no roteador, na aba CLI, digitar enable e acessar o modo de configuração digitando configure terminal.
+
+Para criar uma nova subinterface inserimos o comando interface Fa0/0.3 (subinterface) e a configuramos digitando encapsulation dot1Q 30. Na sequência, definimos o seu endereço IP com o comando ip address 172.16.4.1 255.255.254.0. Observe que estamos usando o endereço de sub-rede 3 da lista que havíamos definido na aula anterior.
+
+Agora, precisamos definir o endereço IP do servidor. Vamos atribuir de modo estático para simplificar o seu acesso. Clique no servidor, na aba Desktop selecione a opção IP Configuration. Na janela que se abriu, vamos manter a opção de endereçamento estática, inserindo as seguintes informações: 172.16.4.2 (IPv4 address), 255.255.254.0 (Subnet mask) e 172.16.4.1 (default gateway).
+
+Teste a conectividade dos computadores com o servidor inserido usando o browser de navegação (opção disponível na aba Desktop ao clicar no PC). No campo URL, basta inserir o endereço IP do servidor (172.16.4.2).
+
+Opinião do instrutor
+
+Observe que conseguimos acessar os dados armazenados no servidor a partir de qualquer PC conectado em nossa rede. Precisamos delimitar esse acesso para atender os requisitos iniciais definidos para o projeto da rede do Instituto Inovae!
+
+@@05
+Definindo tráfego na rede
+
+Inserimos um servidor na rede do Instituto Inovae. No entanto, este servidor precisa ser configurado com uma determinada política de acesso, porque planejamos armazenar alguns dados sensíveis da empresa. Apenas as pessoas das áreas de coordenação e gerência devem ter acesso a este servidor.
+Já mencionamos que a lista de acesso armazenada no roteador pode ser uma solução potencial para nosso caso. Com ela, o roteador irá analisar as configurações de acesso e comparar com o tráfego que chega, para verificar se libera ou bloqueia um determinado tráfego.
+
+Agora, vamos configurar essa lista de acesso na prática e verificar como ela funciona. Para começar, o filtro da lista de acesso será feito utilizando os endereços IP dos computadores.
+
+Como nós estamos usando o modo de endereçamento dinâmico para todos os computadores da nossa rede, podemos ter um problema. Se um computador tem um endereço IP que muda a cada dia, nosso filtro pode falhar. Ele poderá permitir o acesso de um computador que não deveria ter acesso, ou negar o acesso a um computador que deveria ter acesso.
+
+Para resolver isso, mudaremos a configuração do IP do computador da gerência e do computador da coordenação para estático. Depois excluiremos esses endereços da nossa pool DHCP.
+
+Começaremos pelo computador da gerência. Clicamos nele com o botão direito e, na janela desse computador, acessamos a opção "IP configuration", que é a primeira. Ele está com o endereço IP 172.16.2.2.
+
+A opção DHCP está selecionada, mas mudaremos isso selecionando a opção "Static" (Estático). Com isso, os campos com a informação de endereço ficam em branco, portanto, vamos preenchê-los.
+
+Em "IPv4", escreveremos o mesmo endereço IP: 172.16.2.2. A nossa máscara ajustada tem 254 no terceiro octeto, então no campo Subter Mask escreveremos: 255.255.254.0. Não podemos esquecer o portão de saída (Default Gateway), que é o 172.16.2.1. Pressionamos "Enter" e pronto, mudamos.
+
+IP Address: 172.16.2.2
+Subnet Mask: 255.255.254.0
+
+Default Gateway: 172.16.2.1
+
+Agora, mudaremos o computador da coordenação, que está com o IP 172.16.2.3. Vamos mudar para estático e seguindo o mesmo processo, sem esquecer o portão de saída, que é o 172.16.2.1.
+
+IP Address: 172.16.2.2
+Subnet Mask: 255.255.254.0
+
+Default Gateway: 172.16.2.1
+
+Agora vamos excluir esses endereços do nosso roteador, para evitar que sejam utilizados por outras pessoas. Então clicamos com o botão direito no roteador e, na aba "CLI", escreveremos os comandos enable e configure terminal para entrarmos no modo de configuração.
+
+Depois usaremos o comando ip dhcp exclude-address e vamos inserir os endereços que queremos excluir. São eles o 172.16.2.2 e o 172.16.2.3.
+
+enable
+configure terminal
+ip dhcp exclude-address 172.16.2.2
+ip dhcp exclude-address 172.16.2.3
+COPIAR CÓDIGO
+Lembrete: Escreva uma linha de comando por vez e pressione "Enter" para executá-la.
+O próximo passo é criar nossa lista de acesso. Para isso, continuaremos no CLI do roteador e usaremos o comando ip access-list ?. Ao escrevermos o ponto de interrogação, ele mostra dois tipos de lista de acesso: a lista de acesso extended (estendida) e a lista de acesso standard (padrão).
+
+A lista de acesso estendida faz uma comparação do endereço de IP de origem e também do endereço de destino. Na padrão, a comparação é apenas entre o endereço de origem.
+
+No nosso caso, queremos filtrar o tráfego de alguns computadores específicos da nossa rede para um servidor específico. Portanto, precisamos que selecionar a opção extended (estendida) para filtrar e analisar tanto a origem quanto o destino.
+
+Então executaremos o comando ip access-list extended ?. Ao digitarmos a interrogação, ele pede um nome para essa lista. Vamos nomeá-la como "gerencial", escrevendo apenas gerencial ?. Ele mostra a confirmação do comando ip access-list extended gerencial, e basta pressionarmos "Enter" que nossa lista de acesso estendida será criada.
+
+Agora precisamos incluir as permissões dessa lista. O roteador armazena essa lista que ele lê cada linha que inserirmos. Para inserir, podemos escrever o comando permit ?.
+
+Toda vez que codamos o ponto de interrogação após um comando, ele mostra as opções que temos para configurar esse comando. Nese caso, temos alguns protocolos, e usaremos o protocolo da camada de transporte, que é o protocolo TCP.
+
+O protocolo TCP é responsável por fazer essa sincronização entre dois computadores ou dispositivos, então escreveremos permit tcp ?. O próximo passo é passar o endereço de origem, e podemos começar pelo computador da gerência. O endereço de origem será "172.16.2.2".
+
+Ao escrevermos permit tcp 172.16.2.2 ?, ele pede agora um "source wildcard bits". Basicamente, informaremos quais octetos do endereço de origem precisam ser exatos.
+
+Portanto, ao chegar um tráfego, ele vai analisar com aquela linha que estamos configurando na lista de acesso. Nessa lista, estabelecemos quais octetos devem ser exatamente iguais para que ele libere o acesso e quais podem ser diferentes.
+
+Por exemplo, quando colocamos, no wildcard bit 0.0.0.255, significa que os três primeiros octetos têm que ser exatamente iguais, mas o último octeto pode variar. Pode ser 2, ou 5, ou 10.
+
+No nosso caso, tem que ser exatamente igual. Se colocarmos 0.0.0 nos três primeiros octetos, qualquer PC que estiver na VLAN do administrativo terá acesso, já que todos têm o endereço de IP com 172.16.2, variando apenas o último octeto. Portanto, no nosso caso o wildcard bit, será 0.0.0.0.
+
+Para concluir, como estamos operando no modo extended, também precisamos informar qual é o destino que queremos permitir esse acesso. Será 172.16.4.2, que é o endereço do servidor da gerência. Além disso, que informaremos o wildcard bit, que precisa ser exatamente igual. Com isso temos permit tcp 172.16.2.2 0.0.0.0 172.16.4.2 0.0.0.0 e podemos pressionar "Enter".
+
+Agora faremos o mesmo processo para o PC da coordenação. Para agilizar, podemos pressionar a seta para cima do teclado, duplicando o último comando, e mudar o .2 pelo .3 no último octeto do endereço de IP de origem. Então executaremos permit tcp 172.16.2.3 0.0.0.0 172.16.4.2 0.0.0.0.
+
+A lista de acesso funciona a cada linha, e configuramos duas linhas. Tudo que não estiver incluído nessa lista de acesso será negado pelo roteador. Então precisamos evitar que o tráfego seja completamente bloqueado e apenas o tráfego para esse servidor seja permitido.
+
+Começaremos usando o deny para negar todo o tráfego remanescente que eventualmente tente acessar esse servidor. Então codamos deny tcp 172.16.. Depois podemos incluir quaisquer octetos, tanto na terceira, quanto na quarta posição.
+
+O que queremos é apenas negar qualquer outro endereço de IP de origem. Então vamos colocar, por exemplo, o 2.6. E como wildcard bit escrevemos 0.0.255.255. Assim, negaremos qualquer origem da VLAN administrativa e da VLAN de pesquisa. Por fim, incluímos o destino que queremos bloquear: 172.16.4.2 0.0.0.0.
+
+deny tcp 172.16.2.6 0.0.255.255 172.16.4.2 0.0.0.0
+COPIAR CÓDIGO
+Configuramos tudo e agora, para evitar qualquer tipo de bloqueio geral, executaremos o comando permit ip any any. Isso significa que estamos permitindo qualquer origem e qualquer destino.
+
+Depois que ele faz a leitura das três linhas, todos os demais tráfegos estão permitidos. Porém, se tivermos um tráfego do computador do pesquisador B, por exemplo, para o servidor da gerência, quando ele chega na terceira linha, esse tráfego será negado, sem chegar na quarta linha.
+
+Então ele executa uma linha por vez e só chega à última linha se não houver nada configurado anteriormente. Portanto, o tráfego não será bloqueado. Após essas configurações, podemos executar o exit.
+
+Fizemos as configurações no roteador e agora vamos fazer um teste, começando pelo computador da coordenação. Vamos abrir a janela desse PC e acessar o navegador. Em seguida, tentaremos acessar nosso servidor, escrevendo "172.16.4.2" na barra da URL.
+
+Em teoria, nós temos acesso e, ao pressionarmos "Enter" temos o acesso como era esperado. Vamos usar o atalho "Ctrl + C" para copiar o endereço do servidor e facilitar nosso próximo teste.
+
+Podemos fechar essa janela e abrir o computador do Pesquisador B, por exemplo. Vamos acessar o navegador web nessa janela e colar o endereço IP usando o atalho "Ctrl + V". Ao pressionarmos "Enter", algo estranho acontece, porque ele está acessando o servidor quando não deveria acessar.
+
+Isso acontece porque está faltando uma configuração nas subinterfaces do nosso roteador. Faremos isso a seguir.
+
+@@06
+Filtrando tráfego
+
+Considere que um laboratório vinculado a uma universidade desenvolve processadores de computador. Esta instituição utiliza listas de controle de acesso (ACLs) em sua rede para auxiliar no processo de prevenção de vazamento de informações importantes.
+Sendo assim, qual das seguintes opções seria a melhor estratégia para implementar estas listas de acesso?
+
+Configurar uma ACL padrão que bloqueie todo o tráfego de saída.
+ 
+Bloquear todo o tráfego de saída com uma ACL padrão não é a melhor solução, pois há necessidade legítima de tráfego de saída na rede do laboratório.
+Alternativa correta
+Configurar uma ACL estendida que bloqueie todo o tráfego de saída para destinos fora da rede do laboratório.
+ 
+Uma ACL estendida pode ser configurada para bloquear todo o tráfego de saída para destinos fora da rede do laboratório. Isso pode efetivamente prevenir o vazamento de informações, permitindo que os usuários na rede do laboratório ainda se comuniquem entre si e com os servidores do laboratório.
+Alternativa correta
+Configurar uma ACL padrão que bloqueie todo o tráfego de entrada.
+ 
+Alternativa correta
+Configurar uma ACL estendida que permite todo o tráfego de saída, exceto para determinados endereços IP sensíveis.
+ 
+Embora uma ACL estendida que permite todo o tráfego de saída, exceto para determinados endereços IP sensíveis, possa ajudar a limitar o vazamento de informações, ela não é tão eficaz quanto a opção c), pois ainda permite que dados sejam enviados para destinos fora da rede do laboratório.
+Alternativa correta
+Configurar uma ACL padrão que permite todo o tráfego de entrada, exceto para determinados endereços IP sensíveis.
+ 
+Uma ACL padrão que permite todo o tráfego de entrada, exceto para determinados endereços IP sensíveis, não aborda o problema do vazamento de informações através do tráfego de saída.
+
+@@07
+Configurando listas de acesso
+
+Inserimos um servidor na nossa rede do Instituto Inovae e configuramos uma lista de acesso. Criamos essa lista no roteador, mas ainda falta alguma configuração.
+Anteriormente realizamos um teste com o computador da coordenação e do pesquisador B, porém ambos os PCs tiveram acesso à página armazenada no servidor indesejadamente. O desejado é que apenas os servidores da gerência e da coordenação tenham este acesso.
+
+Vamos faremos mais um teste no modo simulação para descobrir o que está ocorrendo. Então clicamos no botão "Simulation", no canto direito da barra inferior azul. Em seguida, abrimos o terminal do pesquisador B, acessarmos o navegador web e escrevemos o endereço do servidor na barra da URL: "172.16.4.2".
+
+Pressionamos "Enter" para acessar a página e clicamos no botão de play da simulação observarmos o que acontece. A mensagem chega ao Switch B, é encaminhada para o Switch C e, finalmente, se direciona para o roteador.
+
+Essa é a execução do protocolo TCP, que é justamente o protocolo que estamos filtrando. Após passar para o Roteador, a mensagem volta para o Switch C e é encaminhada para o servidor da gerência.
+
+Contudo, isso é um erro, porque essa mensagem deveria ter sido bloqueada pelo Roteador. A mensagem do protocolo TCP que estabelece conexão do PC do pesquisador B com o servidor da gerência, e ela chegou ao servidor da gerência, ou seja, o roteador não realizou o filtro corretamente. Falta alguma configuração.
+
+Vamos voltar para o modo "Realtime", clicando no botão da barra inferior azul e descobrir o que está faltando. A configuração está na vinculação da subinterface a esta lista de acesso. A lista de acesso que criamos não está vinculada a nenhuma das subinterfaces, logo, o roteador não está fazendo a verificação do tráfego na nossa rede.
+
+Então clicamos no roteador e acessamos a aba CLI, para realizar essa vinculação. Para isso digitamos enable e depois configure terminal. Em seguida, acessaremos cada uma das subinterfaces criadas.
+
+Começaremos escrevendo interface Fa 0/0.1. Depois usaremos o comando ip access-group gerencial ?, porque "gerencial" é o nome que atribuímos à lista de acesso.
+
+Ao digitarmos ?, descobrimos que precisamos definir se o filtro será aplicado na entrada ou na saída da subinterface. No nosso caso será na entrada, para filtramos toda tentativa de tráfego que chegar e verificar se o acesso será permitido ou negado.
+
+Para isso escrevemos ip access-group gerencial in e pressionamos "Enter". A configuração foi realizada, então fechamos com exit. Ainda nesse CLI, repetiremos esse processo para as demais subinterfaces, usando a seta para cima do teclado para agilizar o processo.
+
+interface Fa 0/0.1
+ip access-group gerencial in
+exit
+interface Fa 0/0.2
+ip access-group gerencial in
+exit
+interface Fa 0/0.3
+ip access-group gerencial in
+exit
+COPIAR CÓDIGO
+Agora testaremos se está funcionando. Começaremos com o computador do Pesquisador B, que não deveria ter acesso. Abrindo o web browser, digitamos o endereço do nosso servidor, que é "172.16.4.2" e pressionamos "Enter". Após aguardarmos um tempo, nenhuma informação foi carregada e recebemos a mensagem "Request Timeout", ou seja, o filtro parece estar operando corretamente.
+
+Vamos tentar o mesmo teste com o Pesquisador A. Acessamos o computador, abrimos o navegador, digitamos "172.16.4.2" na barra da URL e, mais uma vez, a requisição de acesso é negada.
+
+Por último, vamos testar na gerência para descobrimos se esse computador está tendo acesso como deveria. Na barra de URL do navegador, escrevemos "172.16.4.2" e pressionamos "Enter". De fato, o computador da gerência tem acesso. Logo, a nossa lista parece ter sido configurada corretamente.
+
+Falta um detalhe. Faremos um ping do Pesquisador A para o computador da gerência, com a finalidade de verificar esse tráfego na nossa rede. Então abriremos a janela do Pesquisador A e acessamos o Command Prompt. Nele escreveremos ping 172.16.2.2 e pressionaremos "Enter".
+
+Observamos que há conectividade entre os computadores. Portanto os demais tráfegos estão sendo permitidos e o tráfego de acesso ao servidor pelos PCs que não estão designados na lista de acesso estão sendo devidamente bloqueados.
+
+Nossa lista de acesso está configurada e não estamos causando nenhum tipo de bloqueio na rede. Agora nós compreendemos o funcionamento da lista de acesso e quais cuidados devemos ter ao criá-la e configurá-la na nossa rede.
+
+Agora voltaremos para aqueles requisitos que mencionamos na aula 1. Um desses requisitos era justamente a conexão com a internet. Na sequência, aprenderemos como essa conexão funciona e aprenderemos como fazê-la.
+
+@@08
+Faça como eu fiz: implementando a lista de acesso
+
+Já inserimos um servidor em nossa rede, mas agora precisamos estabelecer algumas políticas de acesso.
+Podemos fazer isso criando e configurando listas de acesso. As listas de acesso ficam armazenadas no roteador, sendo consultadas por ele para verificação do tráfego. Temos duas opções de lista de acesso: extended (verificação é realizada em relação à origem e ao destino do tráfego) e standard (verificação é realizada apenas em relação à origem).
+
+No caso do servidor, teremos que fazer uma verificação da origem (apenas computadores da gerência e coordenação) e do destino (acesso ao servidor).
+
+Siga a sequência:
+
+Inicie a configuração clicando no roteador, aba CLI e entre no modo de configuração com os comandos enable e configure terminal. Na sequência, criamos a lista com o comando ip access-list extended gerencial. Repare que “gerencial” é o nome da lista.
+
+A lista foi criada e agora precisamos definir as autorizações. Usaremos os seguintes comandos:
+
+permit tcp source wildcard 172.16.4.2 0.0.0.0
+No campo source precisamos inserir o endereço dos computadores da gerência e coordenação. No wildcard, podemos inserir 0.0.0.0 para garantir uma boa precisão na verificação de origem. Teremos que incluir uma linha para cada permissão de acesso.
+deny tcp 172.16.2.128 0.0.0.255 172.16.4.2 0.0.0.0
+Estamos bloqueando todo o tráfego restante que porventura tente acessar o servidor.
+permit ip any any
+A leitura da lista é feita linha a linha, isso significa que, ao chegar nessa linha, o roteador vai liberar qualquer tráfego na rede.
+Se o tráfego tivesse sido liberado ou negado anteriormente, o roteador pararia a verificação e já teria tomado a decisão.
+Vamos precisar excluir os endereços IP dos computadores da gerência e da coordenação do pool dhcp do roteador. Antes, clique nos respectivos PCs e mude o modo de endereçamento para estático. Utilize os seus endereços para configuração de permissão tcp na lista de acesso (primeiro comando da lista).
+
+No roteador, entre no modo de configuração e digite o comando ip dhcp excluded-address X.X.X.X. No campo “X.X.X.X” você deve inserir o endereço IP que será excluído. Repita o mesmo comando para cada endereço que deverá ser excluído do pool dhcp.
+
+Por fim, configure essa lista de acesso criada para que ela esteja vinculada às subinterfaces das vlans do administrativo e da pesquisa. Vamos entrar em cada uma dessas sub-interfaces no modo de configuração do roteador e inserir o comando ip access-group gerencial IN. Com isso, estamos vinculando a lista às subinterfaces e definindo que a verificação deve ser realizada na entrada de cada subinterface.
+
+Agora é hora de testar! Verifique se os demais PCs continuam tendo acesso à página web armazenada no servidor. Lembre-se que basta digitar o endereço IP do servidor no browser de cada PC para realização do teste.
+
+Opinião do instrutor
+
+Uma vez que alteramos a política de acesso, somente os computadores da gerência e coordenação continuarão acessando a página web disponível no servidor. Os demais usuários não terão permissão de acesso e com isso a página não será exibida.
+
+@@09
+O que aprendemos?
+
+Nessa aula, você aprendeu como:
+Implementar e configurar um servidor em uma rede para armazenamento de dados e páginas web;
+Utilizar os protocolos TCP e UDP em uma rede na camada de transporte;
+Criar e configurar listas de acesso para definir o tráfego de uma rede, restringindo o acesso a dispositivos com informações reservadas.
