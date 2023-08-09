@@ -1950,3 +1950,450 @@ Nessa aula, você aprendeu como:
 Implementar e configurar um servidor em uma rede para armazenamento de dados e páginas web;
 Utilizar os protocolos TCP e UDP em uma rede na camada de transporte;
 Criar e configurar listas de acesso para definir o tráfego de uma rede, restringindo o acesso a dispositivos com informações reservadas.
+
+#### 09/08/2023
+
+@04-Conexão com a internet
+
+@@01
+Conexão com redes externas
+
+Avançamos bastante no projeto da rede do Instituto Inovae.
+Começamos configurando as VLANs, implementando uma política de acesso para um servidor que incluímos e verificando como poderíamos fazer uma alocação de endereços IP de modo mais eficiente.
+
+Mas está faltando um elemento muito importante, que faz parte de nossas vidas. E o que é? A conexão com a internet.
+
+Como acontece a conexão com a internet? A internet nada mais é do que uma rede global de computadores interconectados.
+
+Para isso, temos uma série de roteadores, uma série de malhas pelas quais trafegam os dados que conseguimos acessar, seja no nosso celular, seja no notebook, por exemplo.
+
+Em nosso projeto não será diferente, temos a nossa rede interna, que criamos para o Instituto Inovae e teremos que fazer uma conexão com uma rede externa. Essa rede externa será a rede de um provedor de serviços (Internet Service Provider), que são as empresas que atuam no fornecimento desses links de comunicação, desses links de conexão com a internet.
+
+Aqui no Brasil, comumente, essas empresas são também empresas de telefonia móvel, por exemplo, a Tim, a Vivo e a Claro são empresas que também atuam como provedores de serviços de internet.
+
+Alguns provedores podem nos oferecer outros serviços, como hospedagem de sites, serviços de e-mail, que também podem ser contratados por meio desses provedores de serviços de internet.
+
+Agora, vamos simular uma conexão com o provedor de internet.
+
+Para isso, vamos inserir um roteador, podemos usar o mesmo roteador que utilizamos em nosso projeto de rede, que é o 1841. Então, vamos selecionar o 1841 e incluí-lo na área superior direita no nosso projeto. Vamos renomear esse roteador. Vamos chamá-lo de "Provedor de serviços".
+
+Agora, precisamos fazer o quê? A conexão da nossa rede interna com essa rede externa, que é a internet. Como se faz isso?
+
+Se observarmos, os cabos que utilizamos em nossa residência ou no escritório para fazer a conexão do nosso computador com o switch ou do nosso computador diretamente com o roteador, são bem diferentes dos cabos de conexão que passam nos postes ou no cabeamento da nossa rua.
+
+Por quê isso? Porque, em geral, os provedores de serviço utilizam outra tecnologia física para o tráfego de dados. Quando essa conexão chega em nossa empresa ou em nossa casa, é preciso ter um processo de conversão física na forma como os dados estão sendo transmitidos.
+
+Por isso, é muito comum, se consultarmos um livro de redes ou até mesmo um esquemático de como funciona a internet, veremos um dispositivo conhecido como modem. O modem atua justamente nessa conversão entre formas físicas de tráfego de dados.
+
+Se analisarmos, por exemplo, um diagrama num livro de redes ou num blog, é muito comum termos um dispositivo como o modem, que fica na interface entre a nossa rede da organização e as redes externas.
+
+Ele está nessa interface porque ele atua na conversão de sinais. O provedor de serviço usa um tipo de sinal para o tráfego dos dados e internamente na nossa rede usamos outro tipo de sinal, por isso precisamos de um dispositivo dedicado a essa conversão.
+
+Hoje em dia é muito comum que os nossos roteadores já tenham uma placa que atua nessa conversão de sinal. E é exatamente isso que vamos fazer agora.
+
+Vamos clicar no roteador "1841 Provedor de Serviços". Analisando a visualização física do que ele possui, se dermos um zoom, por exemplo, não temos nenhuma placa destinada a essa conversão de sinais. O que faremos? Vamos ter que incluir uma dessas placas. Podemos inserir aqui, por exemplo, a placa WIC-1T, que vai atuar nessa conversão de sinal.
+
+Podemos inserir a placa WIC-1T clicando nela e a soltando no slot 1, por exemplo. No entanto, surge uma mensagem informando que nosso roteador está ligado e, por isso, não podemos inserir uma nova placa. Precisamos desligar o dispositivo para fazer esta conexão.
+
+Perceba que está sendo utilizada uma interface serial para a conexão entre o roteador do provedor de serviços e o roteador interno da nossa rede. Repetiremos o mesmo processo em nosso roteador "Router1", mas antes de desligá-lo, precisamos executar um comando importante.
+
+As configurações que criamos não estão salvas na memória não volátil do nosso dispositivo. Portanto, precisamos salvar nossas configurações. Nesse caso, executaremos os seguintes comandos:
+
+enable
+COPIAR CÓDIGO
+write
+COPIAR CÓDIGO
+Isso disparará o processo de building configuration (construção da configuração), carregando todas as configurações salvas. Uma vez carregada, podemos desligar o nosso dispositivo Router1.
+
+Após a desativação do dispositivo, faremos o mesmo processo para o roteador, selecionando a mesma placa WIC-1T.
+
+Em seguida, ligaremos o dispositivo novamente e a interface, inicialmente vermelha, retornará ao verde.
+
+A conexão entre o roteador do provedor de serviços e o roteador da nossa rede será feita utilizando um conector Serial DCE. As placas que adicionamos possuem uma interface serial e essa conexão permite controlar a frequência de clock e prevenir, por exemplo, erros. Além disso, é uma conexão um pouco mais segura.
+
+Clique na conexão "Serial DCE", primeiro clicaremos no roteador, que definirá a frequência de clock (velocidade de tráfego na rede). Essa definição é responsabilidade do provedor de serviços. Clicaremos no "Provedor de Serviços" e depois no roteador da rede do Instituto Inovae. A conexão será estabelecida, mas ainda faltará configurar e ativar a interface.
+
+Para ativação, é necessário configurar um endereço IP público, diferente do IP privado que usamos internamente na rede do Instituto Inovae.
+
+O IP público é o que usamos para conectar à internet, controlado por agências reguladoras e fornecido pelos provedores de serviços. O provedor de serviço indicará qual o endereço IP público da nossa rede.
+
+Para que haja uma alocação eficiente dos endereços IP públicos, que são escassos e pagos. Precisamos fazer uma boa análise de qual endereço IP será usado, tanto para a interface do roteador do Instituto Inovae quanto para a interface do provedor de serviços, que faz a conexão com a nossa rede.
+
+No próximo vídeo, discutiremos qual endereço IP será usado.
+
+@@02
+Meios físicos de transmissão
+
+Em um laboratório de ciência de dados, diversos dispositivos estão conectados a um servidor central, que é utilizado para processamento de grandes volumes de dados e que pode sofrer com interferências eletromagnéticas. Todos os dispositivos precisam transmitir e receber dados do servidor de maneira rápida e eficiente.
+Qual seria o meio físico de transmissão mais adequado para esta situação, levando em consideração o desempenho, a confiabilidade e a taxa de transferência de dados?
+
+Par trançado sem blindagem (UTP).
+ 
+Alternativa correta
+Fibra óptica.
+ 
+A fibra óptica é o meio de transmissão mais rápido disponível e é capaz de transmitir dados a longas distâncias com pouca ou nenhuma redução de sinal. Ela é altamente resistente a interferências, o que a torna um meio confiável para o tráfego intenso de dados em um laboratório de ciência de dados.
+Alternativa correta
+Conexão sem fio (Wi-Fi).
+ 
+Alternativa correta
+Cabo coaxial.
+ 
+Alternativa correta
+Linha discada.
+
+@@03
+Configuração do provedor de serviços
+
+Realizamos a conexão da nossa rede com a rede de um provedor externo, mas ainda não definimos qual será o endereço de IP público que utilizaremos. Observamos que um provedor de serviços possui um número bastante limitado de endereços IP público, então precisamos fazer uma alocação eficiente desses endereços.
+Mencionamos anteriormente que, devido a termos dois roteadores em contato, precisaremos de dois endereços, um para cada interface em conexão.
+
+Vamos então analisar como realizar essa alocação. Como precisamos apenas de dois endereços, faremos a conversão do número dois em decimal para sua respectiva representação em binário.
+
+Se usarmos a calculadora do Windows no modo programador, verificaremos que o número 2 é representado pela sequência binária 10 (um zero), que seria o nosso 10, em decimal. Logo, necessitamos de dois bits para a representação desse número. Vamos atualizar na nossa máscara de rede.
+
+Como fica então a representação binária da nossa máscara de rede? Ela fica preenchida de 1s e somente os dois últimos bits com zero, fazendo referência justamente ao 10 que precisamos representar.
+
+11111111.11111111.11111111.11111100
+COPIAR CÓDIGO
+Com dois bits, quantos endereços IP teremos disponíveis?
+
+Se fizermos uma conta rápida, 2 elevado a 2, teremos 4, descontando os dois endereços que são reservados, que são o endereço da sub-rede e o endereço broadcast. Logo, teremos exatamente os dois endereços que precisamos.
+
+Agora, vamos verificar em qual octeto ocorre essa transição do bit 1 para o bit 0.
+
+Representação binária da máscara de rede:
+11111111.11111111.11111111.11111100
+
+Transição de bit 1 para 0 no quarto octeto:
+
+11111111.11111111.11111111.11111100
+
+De maneira muito simples, isso acontece no quarto octeto, ou seja, o último. E qual é a posição do último bit 1 no quarto octeto? É justamente na posição 4.
+
+Identificar a posição de ocorrência do último bit 1
+11111111.11111111.11111111.11111100
+
+Ordenamento: 128 - 64 - 32 - 16 - 8 - 4 - 2 - 1
+
+Posição: 4
+
+Por que isso é relevante? Porque para definirmos os endereços das sub-redes, precisamos dessa posição para fazer o incremento.
+
+Se pegarmos, por exemplo, o endereço IP público 150.1.1.0 e usá-lo como o primeiro endereço, o endereço da sub-rede 1.
+
+Como obtemos o endereço da sub-rede 2? Adicionando o 4 no quarto octeto.
+
+IP de rede: 150.1.1.0
+IP sub-rede 1: 150.1.1.0
+
+IP broadcast sub-rede 1:
+
+IP sub-rede 1: 150.1.1.4
+
+IP broadcast sub-rede 2:
+
+Após isso, teremos o endereço da sub-rede 2. E como encontramos seus respectivos endereços de broadcast? Basta subtrair 1 do endereço da próxima sub-rede.
+
+IP de rede: 150.1.1.0
+IP sub-rede 1: 150.1.1.0
+
+IP broadcast sub-rede 1: 150.1.1.3
+
+IP sub-rede 1: 150.1.1.4
+
+IP broadcast sub-rede 2: 150.1.1.7
+
+Por exemplo, para a sub-rede 1, pegamos o 150.1.4 - 1, obtendo assim 150.1.3.
+
+E para a sub-rede 2? Consideramos fazendo uma soma de 150.1.4 + 4, que seria o próximo endereço da sub-rede e subtraímos 1 para achar o endereço de broadcast dessa sub-rede. Realizando esse exercício, encontramos esse endereço que é o 150.1.1.7.
+
+Agora, vamos implementar esses endereços nas respectivas interfaces do nosso projeto.
+
+Podemos começar pela interface do roteador do provedor de serviços. Vamos clicar nele, acessar a aba "CLI". Perceba que o device não está ligado. Tínhamos desligado para incluir o modem. Vamos ligar novamente e abrir a aba CLI.
+
+Lembrando da pergunta tradicional que aparece quando iniciamos a configuração, "Se queremos começar a configuração no modo diálogo?" Nossa resposta continua sendo "não". Vamos executar os comandos:
+
+enable
+COPIAR CÓDIGO
+configure terminal
+COPIAR CÓDIGO
+Vamos realizar agora a atribuição do endereço IP para a nossa interface serial do roteador do provedor de serviços.
+
+Vamos minimizar a aba CLI, passar o mouse em cima do "Provedor de serviços" e assim verificaremos quais são as interfaces disponíveis.
+
+A interface serial está indicada como serial 0/1/0. Temos também as interfaces fast ethernet, mas não estamos nos conectando com nenhuma delas. Portanto, vamos utilizar a interface serial 0/1/0.
+
+interface serial 0/1/0
+COPIAR CÓDIGO
+Vamos usar o comando ip address e usar 150.1.1.1, neste caso, usaremos a primeira sub-rede e temos apenas um endereço IP disponível nessa sub-rede. Também precisaremos incluir a máscara de rede, que é 255.155.155.252.
+
+ip address 150.1.1.1 255.255.255.252
+COPIAR CÓDIGO
+Com essa configuração feita, podemos agora executar o exit e passar para o próximo roteador.
+
+O próximo roteador será o roteador da nossa rede do Instituto Inovae.
+
+Seguimos para a aba CLI e fazemos o mesmo processo:
+
+enable
+COPIAR CÓDIGO
+configure terminal
+COPIAR CÓDIGO
+interface serial 0/1/0
+COPIAR CÓDIGO
+ip address 150.1.1.2 255.255.255.252
+COPIAR CÓDIGO
+Após pressionar "Enter", para testar se essas duas interfaces estão conectadas, podemos executar o comando exit seguido de um "Ctrl + Z" e tentar fazer um ping para 150.1.1.1, que é a interface do roteador do provedor de serviços.
+
+ping 150.1.1.1
+COPIAR CÓDIGO
+Mas nosso teste ping não obteve sucesso.
+
+Qual foi o problema? Esquecemos de ativar a porta serial. Lembremos que toda vez que iniciamos um roteador e incluímos uma nova porta, precisamos executar o comando no shutdown, pois a porta vem desativada por padrão.
+
+Podemos fazer essa ativação, por exemplo, no roteador "Provedor de serviços", na aba "CLI" vamos executar um exit e entrar na parte de configuração.
+
+interface serial 0/1/0
+COPIAR CÓDIGO
+no shutdown
+COPIAR CÓDIGO
+: %LINK-%CHANGED: Interface Serial10/1/0, changed state to up
+Agora que o status mudou para up, podemos fazer o teste do ping neste roteador,dando um "Ctrl + Z" e usando o comando:
+
+ping 150.1.1.2
+COPIAR CÓDIGO
+Success rate is 100 percent (5/5), round-trip min/avg/max = 3/5/7 ms
+E tivemos uma taxa de sucesso de 100%, ou seja, agora as interfaces estão de fato conectadas.
+
+Próximo passo
+Agora, precisamos fazer a conversão. Estamos usando endereços IP privados, que estamos utilizando internamente no Instituto Inovae, no roteador - que é conhecido como o ponto de demarcação de nossa rede ,que é o limite entre a rede interna da instituição e a rede externa do provedor de serviços. Precisamos de algum mecanismo para traduzir esses endereços IP. Para isso, existe um protocolo específico, o protocolo NAT, que analisaremos em seguida.
+
+@@04
+Distribuição de endereços IP
+
+Em uma instituição de ensino superior, o departamento de inteligência artificial precisa dimensionar a alocação de endereços IP para sua rede, que contém 500 dispositivos. Como este processo está associado ao uso de recursos escassos e pagos, é importante que o dimensionamento seja adequado de acordo com a demanda sugerida.
+Utilizando-se de uma sub-rede de classe B, qual seria a máscara de sub-rede mais adequada para esse cenário, considerando uma utilização eficiente dos endereços IP disponíveis?
+
+Selecione uma alternativa
+
+255.255.0.0
+ 
+Essa é a máscara de sub-rede padrão para uma rede de classe B, que fornece até 65,534 endereços de host. Isso é excessivo para a necessidade atual, levando a um desperdício de endereços IP.
+Alternativa correta
+255.255.255.128
+ 
+Esta máscara de sub-rede só permite até 126 endereços de host. Isso é insuficiente para acomodar os 500 dispositivos necessários.
+Alternativa correta
+255.255.254.0
+ 
+Esta máscara de sub-rede permite até 510 endereços de host, o que é suficiente para acomodar os 500 dispositivos necessários, com uma utilização eficiente dos endereços IP disponíveis. A fórmula para o cálculo dos hosts é 2^(32-n) - 2, onde n é o número de bits usados na máscara de sub-rede. Nesse caso, a máscara /23 (ou 255.255.254.0) usa 23 bits, fornecendo 2^(32-23) - 2 = 510 hosts.
+Alternativa correta
+255.255.255.0
+ 
+Esta máscara de sub-rede só permite até 254 endereços de host. Isso é insuficiente para acomodar os 500 dispositivos necessários.
+Alternativa correta
+255.255.252.0
+ 
+Esta máscara de sub-rede permite até 1022 endereços de host. Embora possa acomodar os 500 dispositivos necessários, levaria a um desperdício de endereços IP, já que muitos endereços ficariam sem uso. A máscara de sub-rede 255.255.254.0 seria uma escolha mais eficiente.
+
+@@05
+Tradução de endereços IP com o NAT
+
+Estabelecemos a conexão da rede do Instituto Inovae com a rede externa de um provedor de serviços e fizemos a configuração destas interfaces. Possuímos um único IP público para a comunicação de toda a nossa rede do Instituto Inovae com a internet.
+O próximo passo é fazer um mecanismo de tradução para todos os endereços IP privados que temos na rede interna em um único endereço público disponível pelo nosso provedor de serviços. Para isso, vamos utilizar um protocolo chamado "NAT".
+
+O termo NAT é uma sigla que surge do termo em inglês: Network Address Translation (Tradução de Endereço de Rede). A função deste protocolo é fazer a tradução de endereço IP privado para endereço IP público.
+
+Deste modo, nossos computadores não serão diretamente expostos à internet. Todos os computadores nessa rede vão utilizar de forma simultânea o mesmo endereço IP público.
+
+Como fazer essa configuração? Vamos clicar no roteador do Instituto Inovae, no ponto de demarcação da nossa rede. Clicamos na aba CLI e digitamos os seguintes comandos:
+
+enable
+COPIAR CÓDIGO
+configure terminal
+COPIAR CÓDIGO
+Entramos no modo de configuração. Agora vamos criar uma lista de acesso com o comando ip access-list, precisamos determinar se a lista será standard ou extended.
+
+Neste caso, precisamos apenas verificar os endereços IP em relação à sua origem. O acesso que este endereço IP deseja fazer não tem relevância no processo de tradução. Portanto, utilizaremos uma lista standard e nomearemos esta lista como "NAT".
+
+ip access-list standart NAT
+COPIAR CÓDIGO
+Após criar a lista, precisamos configurá-la. Utilizaremos "permit 172.16", pois todos os endereços IP que estamos utilizando na rede interna iniciam com este prefixo. O sufixo varia conforme a VLAN em que estamos conectados. Considerando que temos três VLANs (servidores, administrativo e pesquisa), podemos incluir "0.0" após "172.16".
+
+permit 172.16.0.0
+COPIAR CÓDIGO
+Para fazer a comparação com os endereços de destino, utilizaremos o wildcard bit "0.0.255.255". Com esta configuração, os dois primeiros octetos precisam ser idênticos aos inseridos, enquanto os dois últimos podem variar.
+
+permit 172.16.0.0 0.0.255.255
+COPIAR CÓDIGO
+Ao pressionarmos "Enter", a lista estará configurada.
+
+O passo seguinte é definir quais interfaces do roteador atuarão como interfaces internas da rede e qual será a interface externa.
+
+Podemos executar um exit e entrar na interface fastethernet 0/0.1 e inserir o comando ip nat inside. Essa interface será uma das interfaces internas da nossa rede, mais especificamente, a da VLAN de pesquisa.
+
+interface Fa 0/0.1
+COPIAR CÓDIGO
+ip nat inside
+COPIAR CÓDIGO
+Em seguida, podemos executar um exit e entrar em uma sub-interface que também será interna.
+
+interface Fa 0/0.2
+COPIAR CÓDIGO
+ip nat inside
+COPIAR CÓDIGO
+Podemos dar um exit. Por fim, configuramos a interface externa, que é a interface serial, que será interface externa da nossa rede.
+
+interface serial 0/1/0
+COPIAR CÓDIGO
+ip nat outside
+COPIAR CÓDIGO
+Já configuramos nossas interfaces como internas ou externas. Para concluir, precisamos vincular essa lista de acesso para que a tradução seja efetivamente realizada.
+
+Para isso, usamos o comando ip nat inside source list NAT interface serial 0/1/0 overload, sendo "nat" a lista de acesso que configuramos e "overload" que significa que todos os endereços IP privados poderão usar de forma simultânea o nosso único IP público, que é o 150.1.1.2.
+
+ip nat inside source list NAT overload
+COPIAR CÓDIGO
+Agora, qual seria o próximo passo? Podemos fazer um teste, realizando um ping do computador da pessoa pesquisadora A para a interface do provedor de serviços, teste este que nos permitirá verificar se já possuímos conectividade com a rede externa.
+
+Para isso, clique no computador da pessoa pesquisadora A, vá até a aba desktop, abra o "command prompt" e execute ping 150.1.1.1. Este é o endereço IP da interface do roteador do provedor de serviços na qual estamos conectados.
+
+ping 150.1.1.1
+COPIAR CÓDIGO
+Pressione "Enter" e observe que já está conectado. Isso significa que o protocolo NAT está funcionando corretamente.
+
+Além disso, caso queiramos visualizar todo o processo de tradução, podemos clicar no roteador da nossa rede. Ao entrar no modo de configuração, use o comando show ip nat translations e pressione 'Enter'.
+
+show ip nat translations
+COPIAR CÓDIGO
+O que podemos observar a partir deste comando? São exibidas todas as traduções realizadas, tanto do inside para o outside. É uma forma de verificarmos todas as traduções que estão sendo realizadas na nossa rede.
+
+Para fazer um teste final, podemos fazer um ping do computador da pessoa pesquisadora B, por exemplo, e fazer esse teste no modo simulação. Para verificar o encaminhamento das mensagens de modo visual.
+
+Vamos clicar em "Simulation", clicaremos no PC "Pesquisador-B". Na aba "Desktop" selecionaremos "Command prompt" e executaremos:
+
+ping 150.1.1.1
+COPIAR CÓDIGO
+Estamos vendo o encaminhamento das mensagens da nossa rede e ao lado direito aparece a lista de eventos com os protocolos rodando.
+
+E a mensagem chegou ao roteador da nossa rede externa, ou seja, visualizamos graficamente a conexão dos nossos PCs com a rede externa. Agora temos a conexão com a internet!
+
+Recapitulando, nós preparamos um servidor com acesso restrito, fizemos uma alocação de endereços IP de tal forma que comportamos a demanda de mais de 600 PCs no Instituto Inovae e já configuramos o acesso à internet. Com isso, cumprimos todos os requisitos.
+
+Sendo assim, finalizamos o nosso projeto.
+
+@@06
+Conversão de endereços IP
+
+O FabLab aberto de uma cidade teve suas redes e sub-redes configuradas. Contudo, há necessidade de realizar a tradução de endereços públicos para privados, também conhecida como NAT (Network Address Translation). Considere que a rede possui um endereço IP público de 203.0.113.0 e precisa traduzir para o endereço IP privado 192.168.1.0.
+Qual dos seguintes comandos seria apropriado para configurar isso em um roteador Cisco?
+
+ip nat inside source static 192.168.1.0 203.0.113.0
+ 
+Este comando está correto para traduzir um endereço IP privado em um endereço IP público em um roteador Cisco. Ele define a tradução estática de um endereço IP de origem interno para um endereço IP de origem externo.
+Alternativa correta
+ip nat outside source static 203.0.113.0 192.168.1.0
+ 
+Alternativa correta
+ip nat inside source dynamic 192.168.1.0 203.0.113.0
+ 
+Alternativa correta
+ip nat source static 203.0.113.0 192.168.1.0
+ 
+Alternativa correta
+ip nat inside destination static 192.168.1.0 203.0.113.0
+
+@@07
+Faça como eu fiz: conexão com a internet
+
+Para começar, vamos inserir um novo roteador em nosso projeto que irá operar como roteador do provedor de serviços de internet (ISP - Internet Service Provider). Podemos inserir o mesmo modelo Cisco 1841 que estamos usando na rede do Instituto Inovae.
+O link fornecido pelo provedor, em geral, possui uma tecnologia específica para transmissão de dados, diferente da tecnologia que usamos em nossas redes locais. Dessa forma, precisamos realizar a conversão de sinais a partir de um cabo coaxial, fibra ou telefônico, para uma conexão ethernet.
+
+Há pouco tempo era comum termos no ponto de demarcação (limite entre a rede interna de uma organização e a rede do provedor de serviços) um dispositivo conhecido como modem (CSU-DSU) que atuava exclusivamente nesse processo de integração de redes (camada física da rede).
+
+Atualmente, os próprios roteadores já possuem uma placa que realiza essa conversão. No entanto, ainda é comum nos diagramas de redes o uso de modem com conexão serial para ilustrar essa demarcação da conexão externa de uma rede local. Aliás, nos roteadores que estamos usando, precisamos fazer a inclusão dessa placa.
+
+Devemos então clicar em cada roteador da rede, clicar na aba Physical e inserir a placa WIC-1T (placa serial) em cada um deles. Para inserir a placa, clique na opção do menu lateral e solte no centro dos espaços vazios dos roteadores.
+
+Atente ao fato que os roteadores necessitam estar desligados para realizar essa operação. No roteador que estamos trabalhando na rede do Instituto Inovae, antes de desligarmos para inclusão da placa serial, precisamos salvar todas as configurações que implementamos até agora. Clique no roteador, clique na aba CLI, digite o comando enable e, na sequência, insira o comando write. Pronto, agora as configurações já estão salvas! Já podemos desligá-lo para inclusão da placa adicional.
+
+Para fazer a conexão entre os roteadores, vamos selecionar o cabo serial DCE na opção connections do menu inferior. Esse cabo é usado na comunicação de dados, pois permite a definição da frequência de clock e evita erros de transmissão. Nesse caso, clicamos primeiro no roteador do ISP, pois ele será responsável pela definição do clock.
+
+Agora, será necessário realizarmos a configuração dos endereços IP das interfaces de conexão dos roteadores.
+
+Vamos clicar no roteador do Instituto Inovae e entrar no modo de configuração na aba CLI. Acessamos a interface serial usando o comando interface serial 0/1/0 e atribuímos um endereço IP para essa interface digitando o comando ip address 150.1.1.1 255.255.255.252. Inserimos um endereço IP público fornecido pelo ISP ao Instituto Inovae.
+
+Clique então no roteador do ISP e acesse seu modo de configuração. Lembre-se de responder no à opção de realizar a configuração no modo diálogo. Acesse a interface serial digitando ** interface serial 0/1/0** e defina o seu endereço IP com o comando ip address 150.1.1.2 255.255.255.252.
+
+Para finalizar o processo de configuração, precisamos configurar o protocolo NAT que irá realizar a tradução dos endereços IP privados usados internamente na rede do Instituto Inovae para o endereço IP público fornecido pelo provedor.
+
+Começamos criando uma lista de acesso no roteador do Instituto Inovae, acessando o seu modo de configuração e digitando o comando ip acess-list standard NAT. Observe que criamos uma lista standard, pois nosso foco é a tradução dos endereços, não há qualquer tipo de restrição de acesso.
+
+Na sequência, vamos definir a tradução da lista usando o comando permit 172.16.0.0 0.0.255.255. Assim, estabelecemos que todos os endereços privados da nossa rede serão traduzidos para o IP público.
+
+Como já vimos anteriormente na implementação de listas de acesso, precisamos vincular a lista criada às interfaces do roteador e definir o vínculo como inside ou outside. As interfaces internas serão configuradas como inside, enquanto a interface serial externa será configurada como outside. Usamos a seguinte sequência de comando no modo de configuração do roteador do Instituto Inovae:
+
+interface FastEthernet 0/0.1
+ip nat inside
+exit
+interface FastEthernet 0/0.1
+ip nat inside
+exit
+interface serial 0/1/0
+ip nat outside
+exit
+Por fim, vamos vincular essa lista de acesso que criamos para possibilitar a efetiva tradução dos endereços. Para isso, usamos o seguinte comando:
+
+config# ip nat inside source list NAT interface serial 0/1/0 overload
+
+O overload permite que todos os endereços IP internos da nossa rede possam usar o único IP público disponível (150.1.1.2) de modo simultâneo.
+
+Chegou o momento de testar se a tradução está sendo realizada testando a conectividade um dos computadores do Instituto Inovae com o provedor de serviços. Use o comando ping 150.1.1.1 no prompt de comando do PC.
+
+Conseguimos realizar a tradução de endereços IP e a conexão com a rede externa do provedor de serviços.
+Sendo assim, concluímos as tarefas da proposta inicial de rede para o Instituto Inovae com grande sucesso.
+
+Trilhamos uma jornada de muito aprendizado, parabéns por ter chegado até aqui!
+
+@@08
+O que aprendemos?
+
+Nessa aula, você aprendeu como:
+As redes dos provedores de serviço de internet estão organizadas;
+Conectar a rede de uma organização à redes externas por meio dos provedores de serviço de internet;
+Realizar a tradução de endereços IP privados em IP públicos para garantir uma conexão segura com outras redes.
+
+@@09
+Conclusão
+
+Parabéns pela conclusão do curso! Vamos revisar brevemente o que estudamos.
+Nós começamos com uma solicitação do Instituto Inovae: construir uma rede para comportar mais de 600 computadores, com conexão à internet e um servidor com acesso restrito.
+
+Por onde começamos?
+
+Iniciamos criando uma LAN (Rede Local), para conexão de dois ambientes, Laboratório A e Laboratório B. Em cada um desses laboratórios, realizamos a instalação de um switch.
+
+Na sequência, implementamos duas VLANs (Redes Locais Virtuais), uma para o segmento administrativo e outra para o segmento de pesquisa. No entanto, deparamos com um problema: a falta de conexão entre essas VLANs.
+
+Como resolvemos isso?
+
+Por meio do roteamento. Para isso, configuramos um roteador em nossa rede.
+
+Em seguida, visto que necessitávamos comportar mais de 600 dispositivos, o endereço da classe C, que estávamos utilizando, não era suficiente.
+
+Tivemos que usar o endereço da classe B. No entanto, essa classe apresenta mais de 60 mil endereços IP disponíveis, tornando-se uma alocação ineficiente.
+
+Realizamos então um estudo de como fazer essa alocação de modo mais eficiente. Dessa forma, conseguimos entender por que o sistema se chama octeto, o que não estava fazendo muito sentido, apenas números decimais nos endereços IP.
+
+Na continuação, analisamos também a redundância. Para tornar a nossa rede menos suscetível a falhas - por exemplo, alguém tropeçar em um cabo e romper a conexão entre dois switches - introduzimos um novo switch e fizemos uma análise do protocolo STP(Spanning Tree Protocol).
+
+Implementamos um servidor, mas tínhamos um requisito especial. O acesso deveria ser permitido apenas para alguns computadores, especificamente os da área gerencial, coordenadores e líderes da empresa.
+
+Para isso, criamos uma lista de acesso e configuramos essa lista no roteador.
+
+Por fim, chegamos à tão desejada e esperada conexão com a internet. Para isso, configuramos o IP público, realizamos a tradução do IP público para o IP privado, utilizando o protocolo NAT (Network Address Translation) e fizemos todos os testes de conexão. Com isso, tivemos êxito em nosso projeto.
+
+Não se esqueça de realizar todas as atividades para obter o certificado. Além disso, consulte o material extra que preparamos para vocês. Em caso de dúvidas, utilize nosso fórum e interaja conosco em nossa comunidade no Discord. Avalie nosso curso e deixe um feedback para nós.
+
+Tchau, espero te encontrar em uma próxima formação aqui na Alura.
